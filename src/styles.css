@@ -808,3 +808,66 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   SKELETON LOADING STATES
+   ============================================================ */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--bg-elevated) 25%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-value {
+  width: 48px;
+  height: 32px;
+  margin: 0 auto 4px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-badge {
+  width: 72px;
+  height: 24px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.skeleton-title {
+  width: 220px;
+  height: 16px;
+  margin-bottom: 6px;
+}
+
+.skeleton-meta {
+  width: 140px;
+  height: 12px;
+}
+
+.skeleton-priority {
+  width: 80px;
+  height: 16px;
+}
+
+.ticket-row-skeleton {
+  cursor: default;
+}
+
+.ticket-row-skeleton:hover {
+  background: var(--bg-card);
+}

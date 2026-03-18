@@ -71,22 +71,38 @@ export default function DashboardPage() {
 
       {/* ── Stats Row ───────────────────────────────── */}
       <div className="stats-row">
-        {Object.entries(stats).map(([key, val]) => (
-          <div
-            key={key}
-            className={`stat-card ${key !== "total" ? "clickable" : ""}`}
-            onClick={() => key !== "total" && setFilterStatus(filterStatus === key ? "all" : key)}
-          >
-            <span className="stat-value">{val}</span>
-            <span className="stat-label">{key}</span>
-            {key !== "total" && (
-              <span
-                className="stat-dot"
-                style={{ background: STATUS_COLORS[key] }}
-              />
-            )}
-          </div>
-        ))}
+        {loading
+          ? ["total", "assigned", "review", "complete", "sent"].map((key) => (
+              <div key={key} className="stat-card">
+                <span className="skeleton skeleton-value" />
+                <span className="stat-label">{key}</span>
+                {key !== "total" && (
+                  <span
+                    className="stat-dot"
+                    style={{ background: STATUS_COLORS[key] }}
+                  />
+                )}
+              </div>
+            ))
+          : Object.entries(stats).map(([key, val]) => (
+              <div
+                key={key}
+                className={`stat-card ${key !== "total" ? "clickable" : ""}`}
+                onClick={() =>
+                  key !== "total" &&
+                  setFilterStatus(filterStatus === key ? "all" : key)
+                }
+              >
+                <span className="stat-value">{val}</span>
+                <span className="stat-label">{key}</span>
+                {key !== "total" && (
+                  <span
+                    className="stat-dot"
+                    style={{ background: STATUS_COLORS[key] }}
+                  />
+                )}
+              </div>
+            ))}
       </div>
 
       {/* ── Toolbar ─────────────────────────────────── */}
@@ -97,11 +113,13 @@ export default function DashboardPage() {
           placeholder="Search tickets…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          disabled={loading}
         />
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
           className="filter-select"
+          disabled={loading}
         >
           <option value="all">All priorities</option>
           <option value="critical">Critical</option>
@@ -113,6 +131,7 @@ export default function DashboardPage() {
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
           className="filter-select"
+          disabled={loading}
         >
           <option value="all">All statuses</option>
           <option value="assigned">Assigned</option>
@@ -127,7 +146,22 @@ export default function DashboardPage() {
 
       {/* ── Ticket List ─────────────────────────────── */}
       {loading ? (
-        <div className="loading-state">Loading tickets…</div>
+        <div className="ticket-list">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="ticket-row ticket-row-skeleton">
+              <div className="ticket-row-left">
+                <span className="skeleton skeleton-badge" />
+                <div className="ticket-info">
+                  <span className="skeleton skeleton-title" />
+                  <span className="skeleton skeleton-meta" />
+                </div>
+              </div>
+              <div className="ticket-row-right">
+                <span className="skeleton skeleton-priority" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <p>No tickets match your filters.</p>
