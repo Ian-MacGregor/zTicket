@@ -35,8 +35,8 @@ export default function TicketFormPage() {
             description: t.description || "",
             priority: t.priority,
             status: t.status,
-            assigned_to: t.assigned_to || "",
-            reviewer: t.reviewer || "",
+            assigned_to: t.assignee?.id || "",
+            reviewer: t.reviewer?.id || "",
             gmail_links: t.gmail_links?.length ? t.gmail_links : [""],
           })
         )
