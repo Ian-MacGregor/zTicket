@@ -88,7 +88,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ColorProvider>
-        <BrowserRouter basename="/ticketing-app">
+        <BrowserRouter basename="/zTicket">
           <AppRoutes />
         </BrowserRouter>
       </ColorProvider>
