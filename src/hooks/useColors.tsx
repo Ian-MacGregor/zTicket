@@ -82,7 +82,7 @@ function applyColors(c: ColorSettings) {
 
   // Highlight outlines for my-assigned / my-review
   root.style.setProperty("--highlight-assigned", c.statusAssigned);
-  root.style.setProperty("--highlight-review", c.text1);
+  root.style.setProperty("--highlight-review", c.statusReview);
 }
 
 function lighten(hex: string, amount: number): string {
