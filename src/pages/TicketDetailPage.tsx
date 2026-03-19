@@ -138,6 +138,12 @@ export default function TicketDetailPage() {
           </span>
         </div>
         <div className="detail-field">
+          <span className="field-label">Client</span>
+          <span className="field-value">
+            {ticket.client?.name || "None"}
+          </span>
+        </div>
+        <div className="detail-field">
           <span className="field-label">Date Assigned</span>
           <span className="field-value">
             {formatDateTime(ticket.date_assigned)}

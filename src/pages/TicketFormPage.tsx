@@ -8,6 +8,7 @@ export default function TicketFormPage() {
   const isEdit = Boolean(id);
 
   const [users, setUsers] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,11 +20,13 @@ export default function TicketFormPage() {
     status: "assigned",
     assigned_to: "",
     reviewer: "",
+    client_id: "",
     gmail_links: [""],
   });
 
   useEffect(() => {
     api.listUsers().then(setUsers).catch(console.error);
+    api.listClients().then(setClients).catch(console.error);
 
     if (isEdit && id) {
       setLoading(true);
@@ -37,6 +40,7 @@ export default function TicketFormPage() {
             status: t.status,
             assigned_to: t.assignee?.id || "",
             reviewer: t.reviewer?.id || "",
+            client_id: t.client?.id || "",
             gmail_links: t.gmail_links?.length ? t.gmail_links : [""],
           })
         )
@@ -71,6 +75,7 @@ export default function TicketFormPage() {
       ...form,
       assigned_to: form.assigned_to || null,
       reviewer: form.reviewer || null,
+      client_id: form.client_id || null,
       gmail_links: form.gmail_links.filter((l) => l.trim() !== ""),
     };
 
@@ -194,6 +199,23 @@ export default function TicketFormPage() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Client */}
+        <div className="form-group">
+          <label htmlFor="client_id">Client</label>
+          <select
+            id="client_id"
+            value={form.client_id}
+            onChange={(e) => set("client_id", e.target.value)}
+          >
+            <option value="">— No client —</option>
+            {clients.map((cl) => (
+              <option key={cl.id} value={cl.id}>
+                {cl.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Gmail Links */}

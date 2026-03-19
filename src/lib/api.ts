@@ -88,4 +88,38 @@ export const api = {
   // Users
   listUsers: () => request<any[]>("/api/users"),
   getMe: () => request<any>("/api/users/me"),
+
+  // Clients
+  listClients: () => request<any[]>("/api/clients"),
+  getClient: (id: string) => request<any>(`/api/clients/${id}`),
+  createClient: (body: any) =>
+    request<any>("/api/clients", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  updateClient: (id: string, body: any) =>
+    request<any>(`/api/clients/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  deleteClient: (id: string) =>
+    request<any>(`/api/clients/${id}`, { method: "DELETE" }),
+  addContact: (clientId: string, body: any) =>
+    request<any>(`/api/clients/${clientId}/contacts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  updateContact: (clientId: string, contactId: string, body: any) =>
+    request<any>(`/api/clients/${clientId}/contacts/${contactId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  deleteContact: (clientId: string, contactId: string) =>
+    request<any>(`/api/clients/${clientId}/contacts/${contactId}`, {
+      method: "DELETE",
+    }),
 };

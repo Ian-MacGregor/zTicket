@@ -9,6 +9,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import TicketFormPage from "./pages/TicketFormPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
+import ClientsPage from "./pages/ClientsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -60,6 +61,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/clients"
+        element={
+          <ProtectedRoute>
+            <ClientsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -68,7 +77,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/zTicket">
+      <BrowserRouter basename="/ticketing-app">
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>

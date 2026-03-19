@@ -902,3 +902,172 @@ a {
 .ticket-row-skeleton:hover {
   background: var(--bg-card);
 }
+
+/* ============================================================
+   CLIENT TAG (on dashboard ticket rows)
+   ============================================================ */
+.ticket-client-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-muted);
+  border-radius: 20px;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* ============================================================
+   CLIENTS PAGE
+   ============================================================ */
+.clients-page {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 0 24px 60px;
+}
+
+.new-client-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.new-client-form .search-input {
+  flex: 1;
+}
+
+.client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.client-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.client-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.client-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.client-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.client-edit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.client-edit-row .search-input {
+  flex: 1;
+}
+
+.contacts-section {
+  padding: 14px 18px;
+}
+
+.contacts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.contacts-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.contact-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.contact-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.contact-form {
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.contact-form-grid input {
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+}
+
+.contact-form-grid input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.contact-form-actions {
+  display: flex;
+  gap: 8px;
+}

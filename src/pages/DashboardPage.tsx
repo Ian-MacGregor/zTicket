@@ -35,6 +35,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
+  const [filterClient, setFilterClient] = useState("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -45,9 +46,18 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Derive unique client list from tickets
+  const clientList = tickets.reduce((acc: { id: string; name: string }[], t) => {
+    if (t.client && !acc.find((c) => c.id === t.client.id)) {
+      acc.push({ id: t.client.id, name: t.client.name });
+    }
+    return acc;
+  }, []).sort((a, b) => a.name.localeCompare(b.name));
+
   const filtered = tickets.filter((t) => {
     if (filterStatus !== "all" && t.status !== filterStatus) return false;
     if (filterPriority !== "all" && t.priority !== filterPriority) return false;
+    if (filterClient !== "all" && t.client?.id !== filterClient) return false;
     if (
       search &&
       !t.title.toLowerCase().includes(search.toLowerCase()) &&
@@ -74,6 +84,9 @@ export default function DashboardPage() {
           <h1>zTicket</h1>
         </div>
         <div className="topbar-right">
+          <Link to="/clients" className="btn btn-ghost">
+            Clients
+          </Link>
           <span className="topbar-email">{user?.email}</span>
           <button className="btn btn-ghost" onClick={signOut}>
             Sign out
@@ -151,6 +164,19 @@ export default function DashboardPage() {
           <option value="complete">Complete</option>
           <option value="sent">Sent</option>
         </select>
+        <select
+          value={filterClient}
+          onChange={(e) => setFilterClient(e.target.value)}
+          className="filter-select"
+          disabled={loading}
+        >
+          <option value="all">All clients</option>
+          {clientList.map((cl) => (
+            <option key={cl.id} value={cl.id}>
+              {cl.name}
+            </option>
+          ))}
+        </select>
         <Link to="/tickets/new" className="btn btn-primary">
           + New Ticket
         </Link>
@@ -191,7 +217,12 @@ export default function DashboardPage() {
                   {t.status}
                 </span>
                 <div className="ticket-info">
-                  <span className="ticket-title">{t.title}</span>
+                  <span className="ticket-title">
+                    {t.title}
+                    {t.client && (
+                      <span className="ticket-client-tag">{t.client.name}</span>
+                    )}
+                  </span>
                   <span className="ticket-meta">
                     {t.assignee?.full_name || "Unassigned"}
                     {t.reviewer ? <> &middot; Review: {t.reviewer.full_name}</> : null}
