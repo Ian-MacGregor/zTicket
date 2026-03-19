@@ -97,6 +97,7 @@ export default function TicketDetailPage() {
 
       {/* ── Title + Status ──────────────────────────── */}
       <div className="detail-title-row">
+        <span className="detail-ref">#{ticket.ref_number}</span>
         <h1>{ticket.title}</h1>
         <span
           className="status-badge status-badge-lg"

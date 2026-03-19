@@ -183,6 +183,7 @@ export default function DashboardPage() {
           {filtered.map((t) => (
             <Link to={`/tickets/${t.id}`} key={t.id} className="ticket-row">
               <div className="ticket-row-left">
+                <span className="ticket-ref">#{t.ref_number}</span>
                 <span
                   className="status-badge"
                   style={{ background: STATUS_COLORS[t.status] }}
