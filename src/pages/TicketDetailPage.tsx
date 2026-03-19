@@ -161,7 +161,33 @@ export default function TicketDetailPage() {
             {formatDateTime(ticket.date_sent)}
           </span>
         </div>
+        <div className="detail-field">
+          <span className="field-label">Quoted Time</span>
+          <span className="field-value">
+            {ticket.quoted_time || "—"}
+          </span>
+        </div>
+        <div className="detail-field">
+          <span className="field-label">Quoted Price</span>
+          <span className="field-value">
+            {ticket.quoted_price != null ? `$${Number(ticket.quoted_price).toFixed(2)}` : "—"}
+          </span>
+        </div>
+        <div className="detail-field">
+          <span className="field-label">Quoted AMF Increase</span>
+          <span className="field-value">
+            {ticket.quoted_amf != null ? `$${Number(ticket.quoted_amf).toFixed(2)}` : "—"}
+          </span>
+        </div>
       </div>
+
+      {/* ── Comments ────────────────────────────────── */}
+      {ticket.comments && (
+        <div className="detail-section">
+          <h2>Comments</h2>
+          <p className="detail-description">{ticket.comments}</p>
+        </div>
+      )}
 
       {/* ── Gmail Links ─────────────────────────────── */}
       {ticket.gmail_links?.length > 0 && (
