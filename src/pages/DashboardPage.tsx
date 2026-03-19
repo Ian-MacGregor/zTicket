@@ -153,6 +153,9 @@ export default function DashboardPage() {
         </div>
         <div className="topbar-right">
           <span className="topbar-email">{user?.email}</span>
+          <Link to="/colors" className="btn btn-ghost">
+            Colors
+          </Link>
           <Link to="/clients" className="btn btn-ghost">
             Clients
           </Link>

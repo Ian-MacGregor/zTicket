@@ -122,4 +122,13 @@ export const api = {
     request<any>(`/api/clients/${clientId}/contacts/${contactId}`, {
       method: "DELETE",
     }),
+
+  // Colors
+  getColors: () => request<any>("/api/colors"),
+  updateColors: (settings: any) =>
+    request<any>("/api/colors", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ settings }),
+    }),
 };

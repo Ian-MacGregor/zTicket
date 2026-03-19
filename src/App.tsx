@@ -5,11 +5,13 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
+import { ColorProvider } from "./hooks/useColors";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import TicketFormPage from "./pages/TicketFormPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import ClientsPage from "./pages/ClientsPage";
+import ColorsPage from "./pages/ColorsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -69,6 +71,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/colors"
+        element={
+          <ProtectedRoute>
+            <ColorsPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -77,9 +87,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/zTicket">
-        <AppRoutes />
-      </BrowserRouter>
+      <ColorProvider>
+        <BrowserRouter basename="/ticketing-app">
+          <AppRoutes />
+        </BrowserRouter>
+      </ColorProvider>
     </AuthProvider>
   );
 }
