@@ -51,6 +51,12 @@ export default function DashboardPage() {
       .then(setTickets)
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    const interval = setInterval(() => {
+      api.listTickets().then(setTickets).catch(console.error);
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const resetFilters = () => {
