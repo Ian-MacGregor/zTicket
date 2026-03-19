@@ -77,7 +77,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter basename="/ticketing-app">
+      <BrowserRouter basename="/zTicket">
         <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
