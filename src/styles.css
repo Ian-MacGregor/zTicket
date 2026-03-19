@@ -446,7 +446,30 @@ a {
   border-color: var(--accent);
 }
 
-/* Ticket List */
+/* Sort Bar */
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sort-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.sort-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
 /* Ticket Table — column-aligned grid */
 .ticket-table {
   display: flex;

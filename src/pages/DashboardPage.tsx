@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("ref-desc");
 
   useEffect(() => {
     api
@@ -54,6 +55,7 @@ export default function DashboardPage() {
     setFilterPriority("all");
     setFilterClient("all");
     setSearch("");
+    setSortBy("ref-desc");
   };
 
   // Derive unique client list from tickets
@@ -64,18 +66,53 @@ export default function DashboardPage() {
     return acc;
   }, []).sort((a, b) => a.name.localeCompare(b.name));
 
-  const filtered = tickets.filter((t) => {
-    if (filterStatus !== "all" && t.status !== filterStatus) return false;
-    if (filterPriority !== "all" && t.priority !== filterPriority) return false;
-    if (filterClient !== "all" && t.client?.id !== filterClient) return false;
-    if (
-      search &&
-      !t.title.toLowerCase().includes(search.toLowerCase()) &&
-      !t.description?.toLowerCase().includes(search.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  const PRIORITY_ORDER: Record<string, number> = {
+    low: 0, medium: 1, high: 2, critical: 3,
+  };
+
+  const STATUS_ORDER: Record<string, number> = {
+    assigned: 0, review: 1, complete: 2, sent: 3,
+  };
+
+  const filtered = tickets
+    .filter((t) => {
+      if (filterStatus !== "all" && t.status !== filterStatus) return false;
+      if (filterPriority !== "all" && t.priority !== filterPriority) return false;
+      if (filterClient !== "all" && t.client?.id !== filterClient) return false;
+      if (
+        search &&
+        !t.title.toLowerCase().includes(search.toLowerCase()) &&
+        !t.description?.toLowerCase().includes(search.toLowerCase())
+      )
+        return false;
+      return true;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "priority-asc":
+          return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+        case "priority-desc":
+          return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
+        case "ref-asc":
+          return (a.ref_number || 0) - (b.ref_number || 0);
+        case "ref-desc":
+          return (b.ref_number || 0) - (a.ref_number || 0);
+        case "updated-desc":
+          return new Date(getLastStatusDate(b) || 0).getTime() - new Date(getLastStatusDate(a) || 0).getTime();
+        case "updated-asc":
+          return new Date(getLastStatusDate(a) || 0).getTime() - new Date(getLastStatusDate(b) || 0).getTime();
+        case "status-asc":
+          return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+        case "status-desc":
+          return STATUS_ORDER[b.status] - STATUS_ORDER[a.status];
+        case "client-asc":
+          return (a.client?.name || "zzz").localeCompare(b.client?.name || "zzz");
+        case "client-desc":
+          return (b.client?.name || "").localeCompare(a.client?.name || "");
+        default:
+          return 0;
+      }
+    });
 
   const stats = {
     total: tickets.length,
@@ -204,6 +241,39 @@ export default function DashboardPage() {
         <Link to="/tickets/new" className="btn btn-primary">
           + New Ticket
         </Link>
+      </div>
+
+      {/* ── Sort Bar ────────────────────────────────── */}
+      <div className="sort-bar">
+        <span className="sort-label">Sort by</span>
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="filter-select"
+          disabled={loading}
+        >
+          <optgroup label="Ticket #">
+            <option value="ref-desc">Ticket # (newest first)</option>
+            <option value="ref-asc">Ticket # (oldest first)</option>
+          </optgroup>
+          <optgroup label="Priority">
+            <option value="priority-desc">Priority (high → low)</option>
+            <option value="priority-asc">Priority (low → high)</option>
+          </optgroup>
+          <optgroup label="Updated Date">
+            <option value="updated-desc">Updated (newest first)</option>
+            <option value="updated-asc">Updated (oldest first)</option>
+          </optgroup>
+          <optgroup label="Status">
+            <option value="status-asc">Status (assigned → sent)</option>
+            <option value="status-desc">Status (sent → assigned)</option>
+          </optgroup>
+          <optgroup label="Client">
+            <option value="client-asc">Client (A → Z)</option>
+            <option value="client-desc">Client (Z → A)</option>
+          </optgroup>
+        </select>
+        <span className="sort-count">{filtered.length} ticket{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* ── Ticket List ─────────────────────────────── */}
