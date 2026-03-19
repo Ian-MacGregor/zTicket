@@ -30,7 +30,7 @@ function formatDateTime(dateStr: string | null): string {
 function getLastStatusDate(ticket: any): string | null {
   if (ticket.date_sent) return ticket.date_sent;
   if (ticket.date_completed) return ticket.date_completed;
-  return ticket.date_assigned;
+  return ticket.created_at;
 }
 
 export default function DashboardPage() {
@@ -415,7 +415,7 @@ export default function DashboardPage() {
 
               {/* Dates */}
               <div className="ticket-col-dates">
-                <span className="ticket-date">Assigned: {formatDateTime(t.date_assigned)}</span>
+                <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
                 <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
               </div>
             </div>

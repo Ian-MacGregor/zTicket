@@ -81,6 +81,7 @@ export default function TicketFormPage() {
 
     const payload = {
       ...form,
+      status: !isEdit ? (form.assigned_to ? "assigned" : "unassigned") : form.status,
       assigned_to: form.assigned_to || null,
       reviewer: form.reviewer || null,
       client_id: form.client_id || null,

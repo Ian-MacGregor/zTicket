@@ -146,9 +146,9 @@ export default function TicketDetailPage() {
           </span>
         </div>
         <div className="detail-field">
-          <span className="field-label">Date Assigned</span>
+          <span className="field-label">Date Created</span>
           <span className="field-value">
-            {formatDateTime(ticket.date_assigned)}
+            {formatDateTime(ticket.created_at)}
           </span>
         </div>
         <div className="detail-field">
