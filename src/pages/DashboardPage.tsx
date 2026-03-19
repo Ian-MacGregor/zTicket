@@ -41,6 +41,7 @@ export default function DashboardPage() {
   const [filterClient, setFilterClient] = useState("all");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("ref-desc");
+  const [filterView, setFilterView] = useState("all");
 
   useEffect(() => {
     api
@@ -56,6 +57,7 @@ export default function DashboardPage() {
     setFilterClient("all");
     setSearch("");
     setSortBy("ref-desc");
+    setFilterView("all");
   };
 
   // Derive unique client list from tickets
@@ -79,6 +81,14 @@ export default function DashboardPage() {
       if (filterStatus !== "all" && t.status !== filterStatus) return false;
       if (filterPriority !== "all" && t.priority !== filterPriority) return false;
       if (filterClient !== "all" && t.client?.id !== filterClient) return false;
+      if (filterView === "my-tickets") {
+        if (t.assignee?.id !== user?.id) return false;
+        if (!["assigned", "review", "complete"].includes(t.status)) return false;
+      }
+      if (filterView === "my-reviews") {
+        if (t.reviewer?.id !== user?.id) return false;
+        if (!["review", "complete"].includes(t.status)) return false;
+      }
       if (
         search &&
         !t.title.toLowerCase().includes(search.toLowerCase()) &&
@@ -273,6 +283,20 @@ export default function DashboardPage() {
             <option value="client-desc">Client (Z → A)</option>
           </optgroup>
         </select>
+        <button
+          className={`btn btn-sm ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setFilterView(filterView === "my-tickets" ? "all" : "my-tickets")}
+          disabled={loading}
+        >
+          My Tickets
+        </button>
+        <button
+          className={`btn btn-sm ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setFilterView(filterView === "my-reviews" ? "all" : "my-reviews")}
+          disabled={loading}
+        >
+          My Reviews
+        </button>
         <span className="sort-count">{filtered.length} ticket{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
