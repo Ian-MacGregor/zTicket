@@ -79,6 +79,12 @@ export default function TicketFormPage() {
     setSaving(true);
     setError(null);
 
+    if (isEdit && form.status !== "unassigned" && !form.assigned_to) {
+      setError("An assigned user is required when status is not Unassigned.");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       ...form,
       status: !isEdit ? (form.assigned_to ? "assigned" : "unassigned") : form.status,
@@ -168,7 +174,10 @@ export default function TicketFormPage() {
               <select
                 id="status"
                 value={form.status}
-                onChange={(e) => set("status", e.target.value)}
+                onChange={(e) => {
+                  set("status", e.target.value);
+                  if (e.target.value === "unassigned") set("assigned_to", "");
+                }}
               >
                 <option value="unassigned">Unassigned</option>
                 <option value="reserved">Reserved</option>

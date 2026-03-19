@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [tickets, setTickets] = useState<any[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterPriority, setFilterPriority] = useState("all");
@@ -44,6 +45,8 @@ export default function DashboardPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("ref-desc");
   const [filterView, setFilterView] = useState("all");
+  const [assignModal, setAssignModal] = useState<{ ticketId: string; pendingStatus: string } | null>(null);
+  const [assignModalUser, setAssignModalUser] = useState("");
 
   useEffect(() => {
     api
@@ -51,6 +54,8 @@ export default function DashboardPage() {
       .then(setTickets)
       .catch(console.error)
       .finally(() => setLoading(false));
+
+    api.listUsers().then(setUsers).catch(console.error);
 
     const interval = setInterval(() => {
       api.listTickets().then(setTickets).catch(console.error);
@@ -142,9 +147,12 @@ export default function DashboardPage() {
     sent: tickets.filter((t) => t.status === "sent").length,
   };
 
-  const handleStatusChange = async (ticketId: string, newStatus: string) => {
+  const handleStatusChange = async (ticketId: string, newStatus: string, assignedTo?: string | null) => {
     try {
-      const updated = await api.updateTicket(ticketId, { status: newStatus });
+      const body: Record<string, unknown> = { status: newStatus };
+      if (newStatus === "unassigned") body.assigned_to = null;
+      if (assignedTo !== undefined) body.assigned_to = assignedTo;
+      const updated = await api.updateTicket(ticketId, body);
       setTickets((prev) =>
         prev.map((t) => (t.id === ticketId ? { ...t, ...updated } : t))
       );
@@ -365,7 +373,13 @@ export default function DashboardPage() {
                   }}
                   onChange={(e) => {
                     e.stopPropagation();
-                    handleStatusChange(t.id, e.target.value);
+                    const newStatus = e.target.value;
+                    if (t.status === "unassigned" && newStatus === "assigned") {
+                      setAssignModalUser("");
+                      setAssignModal({ ticketId: t.id, pendingStatus: newStatus });
+                    } else {
+                      handleStatusChange(t.id, newStatus);
+                    }
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -421,6 +435,43 @@ export default function DashboardPage() {
             </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Assign User Modal ────────────────────────── */}
+      {assignModal && (
+        <div className="modal-overlay" onClick={() => setAssignModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="modal-title">Assign a user</h2>
+            <p className="modal-body">Select a user to assign to this ticket.</p>
+            <select
+              className="filter-select modal-select"
+              value={assignModalUser}
+              onChange={(e) => setAssignModalUser(e.target.value)}
+            >
+              <option value="">— Select user —</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name || u.email}
+                </option>
+              ))}
+            </select>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setAssignModal(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={!assignModalUser}
+                onClick={async () => {
+                  await handleStatusChange(assignModal.ticketId, assignModal.pendingStatus, assignModalUser);
+                  setAssignModal(null);
+                }}
+              >
+                Assign
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
