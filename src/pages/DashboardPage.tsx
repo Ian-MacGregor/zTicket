@@ -392,7 +392,12 @@ export default function DashboardPage() {
               {/* Files */}
               <div className="ticket-col-files">
                 {t.files?.length > 0 && (
-                  <span className="file-count">📎 {t.files.length}</span>
+                  <span className="file-count">
+                    <svg className="icon-clip" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12.5 7.5l-5.5 5.5a3 3 0 01-4.24-4.24l6.36-6.36a2 2 0 012.83 2.83L5.58 11.6a1 1 0 01-1.41-1.41L10 4.35" />
+                    </svg>
+                    {t.files.length}
+                  </span>
                 )}
               </div>
 
