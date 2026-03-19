@@ -4,13 +4,15 @@ import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
 const STATUS_COLORS: Record<string, string> = {
+  unassigned: "var(--status-unassigned)",
+  reserved: "var(--status-reserved)",
   assigned: "var(--status-assigned)",
   review: "var(--status-review)",
   complete: "var(--status-complete)",
   sent: "var(--status-sent)",
 };
 
-const STATUSES = ["assigned", "review", "complete", "sent"];
+const STATUSES = ["unassigned", "reserved", "assigned", "review", "complete", "sent"];
 
 const PRIORITY_LABELS: Record<string, string> = {
   critical: "⬤ Critical",
@@ -73,7 +75,7 @@ export default function DashboardPage() {
   };
 
   const STATUS_ORDER: Record<string, number> = {
-    assigned: 0, review: 1, complete: 2, sent: 3,
+    unassigned: 0, reserved: 1, assigned: 2, review: 3, complete: 4, sent: 5,
   };
 
   const filtered = tickets
@@ -83,7 +85,7 @@ export default function DashboardPage() {
       if (filterClient !== "all" && t.client?.id !== filterClient) return false;
       if (filterView === "my-tickets") {
         if (t.assignee?.id !== user?.id) return false;
-        if (!["assigned", "review", "complete"].includes(t.status)) return false;
+        if (!["reserved", "assigned", "review", "complete"].includes(t.status)) return false;
       }
       if (filterView === "my-reviews") {
         if (t.reviewer?.id !== user?.id) return false;
@@ -126,6 +128,8 @@ export default function DashboardPage() {
 
   const stats = {
     total: tickets.length,
+    unassigned: tickets.filter((t) => t.status === "unassigned").length,
+    reserved: tickets.filter((t) => t.status === "reserved").length,
     assigned: tickets.filter((t) => t.status === "assigned").length,
     review: tickets.filter((t) => t.status === "review").length,
     complete: tickets.filter((t) => t.status === "complete").length,
@@ -168,7 +172,7 @@ export default function DashboardPage() {
       {/* ── Stats Row ───────────────────────────────── */}
       <div className="stats-row">
         {loading
-          ? ["total", "assigned", "review", "complete", "sent"].map((key) => (
+          ? ["total", "unassigned", "reserved", "assigned", "review", "complete", "sent"].map((key) => (
               <div key={key} className="stat-card">
                 <span className="skeleton skeleton-value" />
                 <span className="stat-label">{key}</span>
@@ -233,6 +237,8 @@ export default function DashboardPage() {
           disabled={loading}
         >
           <option value="all">All statuses</option>
+          <option value="unassigned">Unassigned</option>
+          <option value="reserved">Reserved</option>
           <option value="assigned">Assigned</option>
           <option value="review">Review</option>
           <option value="complete">Complete</option>

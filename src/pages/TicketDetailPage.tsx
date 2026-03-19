@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 
 const STATUS_COLORS: Record<string, string> = {
+  unassigned: "var(--status-unassigned)",
+  reserved: "var(--status-reserved)",
   assigned: "var(--status-assigned)",
   review: "var(--status-review)",
   complete: "var(--status-complete)",

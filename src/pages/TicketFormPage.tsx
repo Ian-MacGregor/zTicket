@@ -17,7 +17,7 @@ export default function TicketFormPage() {
     title: "",
     description: "",
     priority: "medium",
-    status: "assigned",
+    status: "unassigned",
     assigned_to: "",
     reviewer: "",
     client_id: "",
@@ -169,6 +169,8 @@ export default function TicketFormPage() {
                 value={form.status}
                 onChange={(e) => set("status", e.target.value)}
               >
+                <option value="unassigned">Unassigned</option>
+                <option value="reserved">Reserved</option>
                 <option value="assigned">Assigned</option>
                 <option value="review">Review</option>
                 <option value="complete">Complete</option>

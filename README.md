@@ -22,7 +22,7 @@ Email and password authentication powered by Supabase. Only email addresses adde
 ### Dashboard (`/`)
 The main view showing all tickets across the company. Features include:
 
-- **Stat cards** — total, assigned, review, complete, and sent counts. Clicking a status card filters the list; clicking "total" resets all filters.
+- **Stat cards** — total, unassigned, reserved, assigned, review, complete, and sent counts. Clicking a status card filters the list; clicking "total" resets all filters.
 - **Filters** — priority, status, client, and text search.
 - **Sort** — ticket number, priority, updated date, status, or client (ascending/descending).
 - **My Tickets / My Reviews** — quick-filter buttons that show tickets assigned to or awaiting review by the current user.
@@ -54,7 +54,7 @@ Manage the client list and their contacts. Each client has a name and a contact 
 Per-user color customization with three categories:
 
 - **Foreground / Background** — controls the card color, page background, and two text shades across the entire app.
-- **Statuses** — sets the color for each status badge (assigned, review, complete, sent), the stat card indicators, and the ticket highlight outlines.
+- **Statuses** — sets the color for each status badge (unassigned, reserved, assigned, review, complete, sent), the stat card indicators, and the ticket highlight outlines.
 - **Priorities** — sets the color for each priority label (critical, high, medium, low).
 
 Each color can be set via a native color wheel or by entering a hex (`#RRGGBB`) or ARGB (`FFRRGGBB`) code. A live preview shows two mock ticket rows using the draft colors before saving. Color settings are per-user and persist across sessions.

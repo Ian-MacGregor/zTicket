@@ -22,6 +22,8 @@
   --accent-muted: rgba(212, 168, 83, 0.12);
 
   /* Status */
+  --status-unassigned: #6b7280;
+  --status-reserved: #a855f7;
   --status-assigned: #5b8def;
   --status-review: #d4a853;
   --status-complete: #4ecb71;
@@ -355,7 +357,7 @@ a {
 /* Stats */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }
