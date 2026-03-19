@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 
@@ -9,6 +9,8 @@ const STATUS_COLORS: Record<string, string> = {
   complete: "var(--status-complete)",
   sent: "var(--status-sent)",
 };
+
+const STATUSES = ["assigned", "review", "complete", "sent"];
 
 const PRIORITY_LABELS: Record<string, string> = {
   critical: "⬤ Critical",
@@ -31,6 +33,7 @@ function getLastStatusDate(ticket: any): string | null {
 
 export default function DashboardPage() {
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -45,6 +48,13 @@ export default function DashboardPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const resetFilters = () => {
+    setFilterStatus("all");
+    setFilterPriority("all");
+    setFilterClient("all");
+    setSearch("");
+  };
 
   // Derive unique client list from tickets
   const clientList = tickets.reduce((acc: { id: string; name: string }[], t) => {
@@ -75,6 +85,17 @@ export default function DashboardPage() {
     sent: tickets.filter((t) => t.status === "sent").length,
   };
 
+  const handleStatusChange = async (ticketId: string, newStatus: string) => {
+    try {
+      const updated = await api.updateTicket(ticketId, { status: newStatus });
+      setTickets((prev) =>
+        prev.map((t) => (t.id === ticketId ? { ...t, ...updated } : t))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   return (
     <div className="dashboard">
       {/* ── Top Bar ─────────────────────────────────── */}
@@ -84,10 +105,10 @@ export default function DashboardPage() {
           <h1>zTicket</h1>
         </div>
         <div className="topbar-right">
+          <span className="topbar-email">{user?.email}</span>
           <Link to="/clients" className="btn btn-ghost">
             Clients
           </Link>
-          <span className="topbar-email">{user?.email}</span>
           <button className="btn btn-ghost" onClick={signOut}>
             Sign out
           </button>
@@ -112,11 +133,14 @@ export default function DashboardPage() {
           : Object.entries(stats).map(([key, val]) => (
               <div
                 key={key}
-                className={`stat-card ${key !== "total" ? "clickable" : ""}`}
-                onClick={() =>
-                  key !== "total" &&
-                  setFilterStatus(filterStatus === key ? "all" : key)
-                }
+                className="stat-card clickable"
+                onClick={() => {
+                  if (key === "total") {
+                    resetFilters();
+                  } else {
+                    setFilterStatus(filterStatus === key ? "all" : key);
+                  }
+                }}
               >
                 <span className="stat-value">{val}</span>
                 <span className="stat-label">{key}</span>
@@ -184,19 +208,18 @@ export default function DashboardPage() {
 
       {/* ── Ticket List ─────────────────────────────── */}
       {loading ? (
-        <div className="ticket-list">
+        <div className="ticket-table">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="ticket-row ticket-row-skeleton">
-              <div className="ticket-row-left">
-                <span className="skeleton skeleton-badge" />
-                <div className="ticket-info">
-                  <span className="skeleton skeleton-title" />
-                  <span className="skeleton skeleton-meta" />
-                </div>
+              <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
+              <div className="ticket-col-status"><span className="skeleton skeleton-badge" /></div>
+              <div className="ticket-col-info">
+                <span className="skeleton skeleton-title" />
+                <span className="skeleton skeleton-meta" />
               </div>
-              <div className="ticket-row-right">
-                <span className="skeleton skeleton-priority" />
-              </div>
+              <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
+              <div className="ticket-col-files" />
+              <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
             </div>
           ))}
         </div>
@@ -205,45 +228,74 @@ export default function DashboardPage() {
           <p>No tickets match your filters.</p>
         </div>
       ) : (
-        <div className="ticket-list">
+        <div className="ticket-table">
           {filtered.map((t) => (
-            <Link to={`/tickets/${t.id}`} key={t.id} className="ticket-row">
-              <div className="ticket-row-left">
+            <div key={t.id} className="ticket-row">
+              {/* Ref */}
+              <div className="ticket-col-ref">
                 <span className="ticket-ref">#{t.ref_number}</span>
-                <span
-                  className="status-badge"
-                  style={{ background: STATUS_COLORS[t.status] }}
-                >
-                  {t.status}
-                </span>
-                <div className="ticket-info">
-                  <span className="ticket-title">
-                    {t.title}
-                    {t.client && (
-                      <span className="ticket-client-tag">{t.client.name}</span>
-                    )}
-                  </span>
-                  <span className="ticket-meta">
-                    {t.assignee?.full_name || "Unassigned"}
-                    {t.reviewer ? <> &middot; Review: {t.reviewer.full_name}</> : null}
-                  </span>
-                </div>
               </div>
-              <div className="ticket-row-right">
-                <div className="ticket-dates">
-                  <span className="ticket-date">Assigned: {formatDateTime(t.date_assigned)}</span>
-                  <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
-                </div>
+
+              {/* Status dropdown */}
+              <div className="ticket-col-status">
+                <select
+                  className="status-select"
+                  value={t.status}
+                  style={{
+                    background: STATUS_COLORS[t.status],
+                    color: "#0e0f11",
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(t.id, e.target.value);
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Title + meta — clickable to detail */}
+              <div
+                className="ticket-col-info"
+                onClick={() => navigate(`/tickets/${t.id}`)}
+              >
+                <span className="ticket-title">
+                  {t.title}
+                  {t.client && (
+                    <span className="ticket-client-tag">{t.client.name}</span>
+                  )}
+                </span>
+                <span className="ticket-meta">
+                  {t.assignee?.full_name || "Unassigned"}
+                  {t.reviewer ? <> &middot; Review: {t.reviewer.full_name}</> : null}
+                </span>
+              </div>
+
+              {/* Priority */}
+              <div className="ticket-col-priority">
                 <span className={`priority-tag priority-${t.priority}`}>
                   {PRIORITY_LABELS[t.priority]}
                 </span>
+              </div>
+
+              {/* Files */}
+              <div className="ticket-col-files">
                 {t.files?.length > 0 && (
-                  <span className="file-count">
-                    📎 {t.files.length}
-                  </span>
+                  <span className="file-count">📎 {t.files.length}</span>
                 )}
               </div>
-            </Link>
+
+              {/* Dates */}
+              <div className="ticket-col-dates">
+                <span className="ticket-date">Assigned: {formatDateTime(t.date_assigned)}</span>
+                <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+              </div>
+            </div>
           ))}
         </div>
       )}

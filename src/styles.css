@@ -447,7 +447,8 @@ a {
 }
 
 /* Ticket List */
-.ticket-list {
+/* Ticket Table — column-aligned grid */
+.ticket-table {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -457,31 +458,80 @@ a {
 }
 
 .ticket-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 64px 100px 1fr 110px 40px 240px;
   align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 12px 18px;
   background: var(--bg-card);
   transition: background 0.12s ease;
-  cursor: pointer;
 }
 
 .ticket-row:hover {
   background: var(--bg-hover);
 }
 
-.ticket-row-left {
+.ticket-col-ref {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 0;
 }
 
-.ticket-row-right {
+.ticket-col-status {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+}
+
+.ticket-col-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.ticket-col-priority {
+  display: flex;
+  align-items: center;
+}
+
+.ticket-col-files {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ticket-col-dates {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+/* Status dropdown in ticket rows */
+.status-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  text-align: center;
+  width: 100%;
+  outline: none;
+}
+
+.status-select:hover {
+  opacity: 0.85;
+}
+
+.status-select option {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  text-transform: uppercase;
 }
 
 .status-badge {
@@ -513,7 +563,6 @@ a {
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
-  min-width: 60px;
 }
 
 .ticket-title {
@@ -827,6 +876,22 @@ a {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  .ticket-row {
+    grid-template-columns: 50px 80px 1fr;
+    grid-template-rows: auto auto;
+    gap: 6px 10px;
+  }
+
+  .ticket-col-priority,
+  .ticket-col-files,
+  .ticket-col-dates {
+    grid-column: 3;
+  }
+
+  .ticket-col-dates {
+    align-items: flex-start;
   }
 }
 
