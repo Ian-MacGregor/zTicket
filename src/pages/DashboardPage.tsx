@@ -284,14 +284,14 @@ export default function DashboardPage() {
           </optgroup>
         </select>
         <button
-          className={`btn btn-sm ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
+          className={`btn ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => setFilterView(filterView === "my-tickets" ? "all" : "my-tickets")}
           disabled={loading}
         >
           My Tickets
         </button>
         <button
-          className={`btn btn-sm ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
+          className={`btn ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
           onClick={() => setFilterView(filterView === "my-reviews" ? "all" : "my-reviews")}
           disabled={loading}
         >
