@@ -299,8 +299,17 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="ticket-table">
-          {filtered.map((t) => (
-            <div key={t.id} className="ticket-row">
+          {filtered.map((t) => {
+            const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
+            const isMyReview = t.status === "review" && t.reviewer?.id === user?.id;
+            const rowClass = [
+              "ticket-row",
+              isMyAssignment ? "ticket-row-my-assigned" : "",
+              isMyReview ? "ticket-row-my-review" : "",
+            ].filter(Boolean).join(" ");
+
+            return (
+            <div key={t.id} className={rowClass}>
               {/* Ref */}
               <div className="ticket-col-ref">
                 <span className="ticket-ref">#{t.ref_number}</span>
@@ -366,7 +375,8 @@ export default function DashboardPage() {
                 <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
