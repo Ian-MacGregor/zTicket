@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">⬡</div>
-          <h1>Ticket System</h1>
+          <h1>zTicket</h1>
           <p>{isRegister ? "Create your account" : "Sign in to continue"}</p>
         </div>
 

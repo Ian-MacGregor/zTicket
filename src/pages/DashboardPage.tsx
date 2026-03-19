@@ -17,6 +17,18 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: "◌ Low",
 };
 
+function formatDateTime(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function getLastStatusDate(ticket: any): string | null {
+  if (ticket.date_sent) return ticket.date_sent;
+  if (ticket.date_completed) return ticket.date_completed;
+  return ticket.date_assigned;
+}
+
 export default function DashboardPage() {
   const { signOut, user } = useAuth();
   const [tickets, setTickets] = useState<any[]>([]);
@@ -59,7 +71,7 @@ export default function DashboardPage() {
       <header className="topbar">
         <div className="topbar-left">
           <span className="topbar-logo">⬡</span>
-          <h1>Tickets</h1>
+          <h1>zTicket</h1>
         </div>
         <div className="topbar-right">
           <span className="topbar-email">{user?.email}</span>
@@ -180,12 +192,16 @@ export default function DashboardPage() {
                 <div className="ticket-info">
                   <span className="ticket-title">{t.title}</span>
                   <span className="ticket-meta">
-                    {t.assignee?.full_name || "Unassigned"} &middot;{" "}
-                    {new Date(t.date_assigned).toLocaleDateString()}
+                    {t.assignee?.full_name || "Unassigned"}
+                    {t.reviewer ? <> &middot; Review: {t.reviewer.full_name}</> : null}
                   </span>
                 </div>
               </div>
               <div className="ticket-row-right">
+                <div className="ticket-dates">
+                  <span className="ticket-date">Assigned: {formatDateTime(t.date_assigned)}</span>
+                  <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+                </div>
                 <span className={`priority-tag priority-${t.priority}`}>
                   {PRIORITY_LABELS[t.priority]}
                 </span>

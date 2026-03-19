@@ -9,6 +9,12 @@ const STATUS_COLORS: Record<string, string> = {
   sent: "var(--status-sent)",
 };
 
+function formatDateTime(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
 export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -133,25 +139,19 @@ export default function TicketDetailPage() {
         <div className="detail-field">
           <span className="field-label">Date Assigned</span>
           <span className="field-value">
-            {ticket.date_assigned
-              ? new Date(ticket.date_assigned).toLocaleDateString()
-              : "—"}
+            {formatDateTime(ticket.date_assigned)}
           </span>
         </div>
         <div className="detail-field">
           <span className="field-label">Date Completed</span>
           <span className="field-value">
-            {ticket.date_completed
-              ? new Date(ticket.date_completed).toLocaleDateString()
-              : "—"}
+            {formatDateTime(ticket.date_completed)}
           </span>
         </div>
         <div className="detail-field">
           <span className="field-label">Date Sent</span>
           <span className="field-value">
-            {ticket.date_sent
-              ? new Date(ticket.date_sent).toLocaleDateString()
-              : "—"}
+            {formatDateTime(ticket.date_sent)}
           </span>
         </div>
       </div>
