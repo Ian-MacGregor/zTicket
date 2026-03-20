@@ -34,6 +34,14 @@ function formatDateTime(dateStr: string | null): string {
   return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+function timeAgo(dateStr: string): string {
+  const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (secs < 60)  return "just now";
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
+}
+
 function getLastStatusDate(ticket: any): string | null {
   return ticket.status_updated_at || ticket.created_at;
 }
@@ -174,6 +182,21 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
+      {/* ── Activity Strip ──────────────────────────── */}
+      {activity.length > 0 && (
+        <div className="activity-strip">
+          <span className="activity-label">Recent</span>
+          {activity.map((a, i) => (
+            <span key={a.id} className="activity-item">
+              {i > 0 && <span className="activity-sep">·</span>}
+              <span className="activity-ref">#{a.ticket?.ref_number}</span>
+              {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
+              <span className="activity-time">{timeAgo(a.created_at)}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ── Top Bar ─────────────────────────────────── */}
       <header className="topbar">
         <div className="topbar-left">
@@ -305,20 +328,6 @@ export default function DashboardPage() {
           ))}
         </select>
       </div>
-
-      {/* ── Activity Feed ───────────────────────────── */}
-      {activity.length > 0 && (
-        <div className="activity-strip">
-          <span className="activity-label">Recent</span>
-          {activity.map((a, i) => (
-            <span key={a.id} className="activity-item">
-              {i > 0 && <span className="activity-sep">·</span>}
-              <span className="activity-ref">#{a.ticket?.ref_number}</span>
-              {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* ── Ticket List ─────────────────────────────── */}
       <div className="ticket-table">
