@@ -2,6 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 
+function formatDateTime(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
   wait_hold: "var(--status-wait-hold)",
@@ -19,12 +25,6 @@ const STATUS_LABELS: Record<string, string> = {
   done: "done",
 };
 
-function formatDateTime(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  const d = new Date(dateStr);
-  return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-}
-
 export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -40,6 +40,20 @@ export default function TicketDetailPage() {
   const [waitHoldReason, setWaitHoldReason] = useState("");
   const [statusError, setStatusError] = useState<string | null>(null);
 
+  // Comments
+  const [comments, setComments] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [newComment, setNewComment] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingBody, setEditingBody] = useState("");
+  const [commentSaving, setCommentSaving] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+
+  const loadComments = () => {
+    if (!id) return;
+    api.listComments(id).then(setComments).catch(console.error);
+  };
+
   const load = () => {
     if (!id) return;
     setLoading(true);
@@ -52,8 +66,40 @@ export default function TicketDetailPage() {
 
   useEffect(() => {
     load();
+    loadComments();
     api.listUsers().then(setUsers).catch(console.error);
+    api.getMe().then((me) => setCurrentUserId(me.id)).catch(console.error);
   }, [id]);
+
+  const handleAddComment = async () => {
+    if (!id || !newComment.trim()) return;
+    setCommentSaving(true);
+    setCommentError(null);
+    try {
+      await api.createComment(id, newComment.trim());
+      setNewComment("");
+      loadComments();
+    } catch (err: any) {
+      setCommentError(err.message || "Failed to post comment.");
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+  const handleSaveEdit = async (commentId: string) => {
+    if (!id || !editingBody.trim()) return;
+    setCommentSaving(true);
+    setCommentError(null);
+    try {
+      await api.updateComment(id, commentId, editingBody.trim());
+      setEditingId(null);
+      loadComments();
+    } catch (err: any) {
+      setCommentError(err.message || "Failed to update comment.");
+    } finally {
+      setCommentSaving(false);
+    }
+  };
 
   const handleStatusChange = async (newStatus: string, extra: Record<string, unknown> = {}) => {
     if (!id) return;
@@ -238,12 +284,76 @@ export default function TicketDetailPage() {
       )}
 
       {/* ── Comments ────────────────────────────────── */}
-      {ticket.comments && (
-        <div className="detail-section">
-          <h2>Comments</h2>
-          <p className="detail-description">{ticket.comments}</p>
+      <div className="detail-section">
+        <h2>Comments</h2>
+
+        {commentError && <div className="alert alert-error">{commentError}</div>}
+
+        {comments.length === 0 && (
+          <p className="empty-files">No comments yet.</p>
+        )}
+
+        <div className="comment-list">
+          {comments.map((c) => (
+            <div key={c.id} className="comment-item">
+              <div className="comment-header">
+                <span className="comment-author">{c.author?.full_name || c.author?.email || "Unknown"}</span>
+                <span className="comment-date">
+                  {formatDateTime(c.created_at)}
+                  {c.updated_at && c.updated_at !== c.created_at && " (edited)"}
+                </span>
+                {currentUserId === c.user_id && editingId !== c.id && (
+                  <button
+                    className="btn btn-ghost btn-sm comment-edit-btn"
+                    onClick={() => { setEditingId(c.id); setEditingBody(c.body); setCommentError(null); }}
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+
+              {editingId === c.id ? (
+                <div className="comment-edit">
+                  <textarea
+                    rows={3}
+                    value={editingBody}
+                    onChange={(e) => setEditingBody(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="comment-edit-actions">
+                    <button className="btn btn-ghost btn-sm" onClick={() => setEditingId(null)}>Cancel</button>
+                    <button
+                      className="btn btn-primary btn-sm"
+                      disabled={commentSaving || !editingBody.trim()}
+                      onClick={() => handleSaveEdit(c.id)}
+                    >
+                      {commentSaving ? "Saving…" : "Save"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="comment-body">{c.body}</p>
+              )}
+            </div>
+          ))}
         </div>
-      )}
+
+        <div className="comment-add">
+          <textarea
+            rows={3}
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment…"
+          />
+          <button
+            className="btn btn-primary btn-sm"
+            disabled={commentSaving || !newComment.trim()}
+            onClick={handleAddComment}
+          >
+            {commentSaving ? "Posting…" : "Post Comment"}
+          </button>
+        </div>
+      </div>
 
       {/* ── Gmail Links ─────────────────────────────── */}
       {ticket.gmail_links?.length > 0 && (

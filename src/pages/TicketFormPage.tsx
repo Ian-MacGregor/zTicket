@@ -13,6 +13,8 @@ export default function TicketFormPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [initialComment, setInitialComment] = useState("");
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -26,7 +28,6 @@ export default function TicketFormPage() {
     quoted_time: "",
     quoted_price: "",
     quoted_amf: "",
-    comments: "",
     wait_hold_reason: "",
   });
 
@@ -52,7 +53,6 @@ export default function TicketFormPage() {
             quoted_time: t.quoted_time || "",
             quoted_price: t.quoted_price != null ? String(t.quoted_price) : "",
             quoted_amf: t.quoted_amf != null ? String(t.quoted_amf) : "",
-            comments: t.comments || "",
             wait_hold_reason: t.wait_hold_reason || "",
           })
         )
@@ -106,7 +106,6 @@ export default function TicketFormPage() {
       quoted_time: form.quote_required ? (form.quoted_time || null) : null,
       quoted_price: form.quote_required ? (form.quoted_price ? parseFloat(form.quoted_price) : null) : null,
       quoted_amf: form.quote_required ? (form.quoted_amf ? parseFloat(form.quoted_amf) : null) : null,
-      comments: form.comments || null,
       wait_hold_reason: form.status === "wait_hold" ? form.wait_hold_reason || null : null,
     };
 
@@ -116,6 +115,9 @@ export default function TicketFormPage() {
         navigate(`/tickets/${id}`);
       } else {
         const created = await api.createTicket(payload);
+        if (initialComment.trim()) {
+          await api.createComment(created.id, initialComment.trim());
+        }
         navigate(`/tickets/${created.id}`);
       }
     } catch (err: any) {
@@ -323,18 +325,6 @@ export default function TicketFormPage() {
           </>
         )}
 
-        {/* Comments */}
-        <div className="form-group">
-          <label htmlFor="comments">Comments</label>
-          <textarea
-            id="comments"
-            rows={4}
-            value={form.comments}
-            onChange={(e) => set("comments", e.target.value)}
-            placeholder="Internal notes or comments…"
-          />
-        </div>
-
         {/* Gmail Links */}
         <div className="form-group">
           <label>Gmail Links</label>
@@ -363,6 +353,20 @@ export default function TicketFormPage() {
             + Add link
           </button>
         </div>
+
+        {/* Initial Comment — create mode only */}
+        {!isEdit && (
+          <div className="form-group">
+            <label htmlFor="initial_comment">Initial Comment</label>
+            <textarea
+              id="initial_comment"
+              rows={4}
+              value={initialComment}
+              onChange={(e) => setInitialComment(e.target.value)}
+              placeholder="Optional first comment on this ticket…"
+            />
+          </div>
+        )}
 
         <div className="form-actions">
           <button

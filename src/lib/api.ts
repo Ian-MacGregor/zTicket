@@ -134,6 +134,22 @@ export const api = {
       method: "DELETE",
     }),
 
+  // Comments
+  listComments: (ticketId: string) =>
+    request<any[]>(`/api/tickets/${ticketId}/comments`),
+  createComment: (ticketId: string, body: string) =>
+    request<any>(`/api/tickets/${ticketId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body }),
+    }),
+  updateComment: (ticketId: string, commentId: string, body: string) =>
+    request<any>(`/api/tickets/${ticketId}/comments/${commentId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body }),
+    }),
+
   // Colors
   getColors: () => request<any>("/api/colors"),
   updateColors: (settings: any) =>
