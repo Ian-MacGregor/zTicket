@@ -55,7 +55,7 @@ export default function DashboardPage() {
   const [limit, setLimit] = useState(10);
 
   // ── Filters & sort ───────────────────────────────────────
-  const [filterStatus,   setFilterStatus]   = useState("all");
+  const [filterStatus,   setFilterStatus]   = useState("active");
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterClient,   setFilterClient]   = useState("all");
   const [filterView,     setFilterView]     = useState("all");
@@ -93,7 +93,8 @@ export default function DashboardPage() {
     api
       .listTickets({
         page, limit, sort: sortBy,
-        status: filterStatus, priority: filterPriority, client: filterClient,
+        status: filterStatus === "active" ? "assigned,review" : filterStatus,
+        priority: filterPriority, client: filterClient,
         view: filterView, search: debouncedSearch, searchType,
         userId: user?.id || "",
       })
@@ -185,28 +186,41 @@ export default function DashboardPage() {
 
       {/* ── Stats Row (global counts — unaffected by filters) ─ */}
       <div className="stats-row">
-        {loading && tickets.length === 0
-          ? ["total", "unassigned", "wait_hold", "assigned", "review", "done"].map((key) => (
+        {(() => {
+          const activeCount = stats.assigned + stats.review;
+          // Order: Active | Unassigned | Wait/Hold | Assigned | Review | Done | Total
+          const cards = [
+            { key: "active",    label: "Active",    val: activeCount,      color: null },
+            { key: "unassigned",label: "Unassigned",val: stats.unassigned, color: STATUS_COLORS["unassigned"] },
+            { key: "wait_hold", label: "Wait/Hold", val: stats.wait_hold,  color: STATUS_COLORS["wait_hold"] },
+            { key: "assigned",  label: "Assigned",  val: stats.assigned,   color: STATUS_COLORS["assigned"] },
+            { key: "review",    label: "Review",    val: stats.review,     color: STATUS_COLORS["review"] },
+            { key: "done",      label: "Done",      val: stats.done,       color: STATUS_COLORS["done"] },
+            { key: "total",     label: "Total",     val: stats.total,      color: null },
+          ];
+          return cards.map(({ key, label, val, color }) =>
+            loading && tickets.length === 0 ? (
               <div key={key} className="stat-card">
                 <span className="skeleton skeleton-value" />
-                <span className="stat-label">{key}</span>
-                {key !== "total" && <span className="stat-dot" style={{ background: STATUS_COLORS[key] }} />}
+                <span className="stat-label">{label}</span>
+                {color && <span className="stat-dot" style={{ background: color }} />}
               </div>
-            ))
-          : Object.entries(stats).map(([key, val]) => (
+            ) : (
               <div
                 key={key}
                 className={`stat-card clickable${filterStatus === key ? " stat-card-active" : ""}`}
                 onClick={() => {
                   if (key === "total") resetFilters();
-                  else setStatusFilter(filterStatus === key ? "all" : key);
+                  else setStatusFilter(filterStatus === key ? "active" : key);
                 }}
               >
                 <span className="stat-value">{val}</span>
-                <span className="stat-label">{key}</span>
-                {key !== "total" && <span className="stat-dot" style={{ background: STATUS_COLORS[key] }} />}
+                <span className="stat-label">{label}</span>
+                {color && <span className="stat-dot" style={{ background: color }} />}
               </div>
-            ))}
+            )
+          );
+        })()}
       </div>
 
       {/* ── Action Bar ──────────────────────────────── */}
