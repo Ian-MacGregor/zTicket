@@ -22,6 +22,7 @@ export default function TicketFormPage() {
     reviewer: "",
     client_id: "",
     gmail_links: [""],
+    quote_required: false,
     quoted_time: "",
     quoted_price: "",
     quoted_amf: "",
@@ -47,6 +48,7 @@ export default function TicketFormPage() {
             reviewer: t.reviewer?.id || "",
             client_id: t.client?.id || "",
             gmail_links: t.gmail_links?.length ? t.gmail_links : [""],
+            quote_required: t.quote_required || false,
             quoted_time: t.quoted_time || "",
             quoted_price: t.quoted_price != null ? String(t.quoted_price) : "",
             quoted_amf: t.quoted_amf != null ? String(t.quoted_amf) : "",
@@ -100,9 +102,10 @@ export default function TicketFormPage() {
       reviewer: form.reviewer || null,
       client_id: form.client_id || null,
       gmail_links: form.gmail_links.filter((l) => l.trim() !== ""),
-      quoted_time: form.quoted_time || null,
-      quoted_price: form.quoted_price ? parseFloat(form.quoted_price) : null,
-      quoted_amf: form.quoted_amf ? parseFloat(form.quoted_amf) : null,
+      quote_required: form.quote_required,
+      quoted_time: form.quote_required ? (form.quoted_time || null) : null,
+      quoted_price: form.quote_required ? (form.quoted_price ? parseFloat(form.quoted_price) : null) : null,
+      quoted_amf: form.quote_required ? (form.quoted_amf ? parseFloat(form.quoted_amf) : null) : null,
       comments: form.comments || null,
       wait_hold_reason: form.status === "wait_hold" ? form.wait_hold_reason || null : null,
     };
@@ -265,44 +268,60 @@ export default function TicketFormPage() {
           </select>
         </div>
 
-        {/* Quoted Fields */}
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="quoted_time">Quoted Time</label>
+        {/* Quote Required */}
+        <div className="form-group form-group-checkbox">
+          <label className="checkbox-label">
             <input
-              id="quoted_time"
-              type="text"
-              value={form.quoted_time}
-              onChange={(e) => set("quoted_time", e.target.value)}
-              placeholder="e.g. 2 weeks, 40 hours"
+              type="checkbox"
+              checked={form.quote_required}
+              onChange={(e) => setForm((prev) => ({ ...prev, quote_required: e.target.checked }))}
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="quoted_price">Quoted Price ($)</label>
-            <input
-              id="quoted_price"
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.quoted_price}
-              onChange={(e) => set("quoted_price", e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
+            Quote Required
+          </label>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="quoted_amf">Quoted AMF Increase ($)</label>
-          <input
-            id="quoted_amf"
-            type="number"
-            step="0.01"
-            min="0"
-            value={form.quoted_amf}
-            onChange={(e) => set("quoted_amf", e.target.value)}
-            placeholder="0.00"
-          />
-        </div>
+        {/* Quoted Fields — only shown when Quote Required is checked */}
+        {form.quote_required && (
+          <>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="quoted_time">Quoted Time</label>
+                <input
+                  id="quoted_time"
+                  type="text"
+                  value={form.quoted_time}
+                  onChange={(e) => set("quoted_time", e.target.value)}
+                  placeholder="e.g. 2 weeks, 40 hours"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="quoted_price">Quoted Price ($)</label>
+                <input
+                  id="quoted_price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={form.quoted_price}
+                  onChange={(e) => set("quoted_price", e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="quoted_amf">Quoted AMF Increase ($)</label>
+              <input
+                id="quoted_amf"
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.quoted_amf}
+                onChange={(e) => set("quoted_amf", e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+          </>
+        )}
 
         {/* Comments */}
         <div className="form-group">

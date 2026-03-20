@@ -205,24 +205,28 @@ export default function TicketDetailPage() {
             {formatDateTime(ticket.date_completed)}
           </span>
         </div>
-        <div className="detail-field">
-          <span className="field-label">Quoted Time</span>
-          <span className="field-value">
-            {ticket.quoted_time || "—"}
-          </span>
-        </div>
-        <div className="detail-field">
-          <span className="field-label">Quoted Price</span>
-          <span className="field-value">
-            {ticket.quoted_price != null ? `$${Number(ticket.quoted_price).toFixed(2)}` : "—"}
-          </span>
-        </div>
-        <div className="detail-field">
-          <span className="field-label">Quoted AMF Increase</span>
-          <span className="field-value">
-            {ticket.quoted_amf != null ? `$${Number(ticket.quoted_amf).toFixed(2)}` : "—"}
-          </span>
-        </div>
+        {ticket.quote_required && (
+          <>
+            <div className="detail-field">
+              <span className="field-label">Quoted Time</span>
+              <span className="field-value">
+                {ticket.quoted_time || "—"}
+              </span>
+            </div>
+            <div className="detail-field">
+              <span className="field-label">Quoted Price</span>
+              <span className="field-value">
+                {ticket.quoted_price != null ? `$${Number(ticket.quoted_price).toFixed(2)}` : "—"}
+              </span>
+            </div>
+            <div className="detail-field">
+              <span className="field-label">Quoted AMF Increase</span>
+              <span className="field-value">
+                {ticket.quoted_amf != null ? `$${Number(ticket.quoted_amf).toFixed(2)}` : "—"}
+              </span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Wait / Hold Reason ──────────────────────── */}
