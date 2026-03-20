@@ -81,8 +81,8 @@ export default function TicketFormPage() {
     setSaving(true);
     setError(null);
 
-    if (isEdit && form.status !== "unassigned" && !form.assigned_to) {
-      setError("An assigned user is required when status is not Unassigned.");
+    if (isEdit && ["assigned", "review"].includes(form.status) && !form.assigned_to) {
+      setError("An assigned user is required when status is Assigned or Review.");
       setSaving(false);
       return;
     }

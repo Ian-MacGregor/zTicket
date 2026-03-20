@@ -10,6 +10,15 @@ const STATUS_COLORS: Record<string, string> = {
   done: "var(--status-done)",
 };
 
+const STATUSES = ["unassigned", "wait_hold", "assigned", "review", "done"];
+const STATUS_LABELS: Record<string, string> = {
+  unassigned: "unassigned",
+  wait_hold: "wait/hold",
+  assigned: "assigned",
+  review: "review",
+  done: "done",
+};
+
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
@@ -20,11 +29,15 @@ export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [ticket, setTicket] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [assignModal, setAssignModal] = useState<{ pendingStatus: string } | null>(null);
+  const [assignModalUser, setAssignModalUser] = useState("");
+  const [waitHoldModal, setWaitHoldModal] = useState(false);
+  const [waitHoldReason, setWaitHoldReason] = useState("");
 
   const load = () => {
     if (!id) return;
@@ -36,7 +49,23 @@ export default function TicketDetailPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [id]);
+  useEffect(() => {
+    load();
+    api.listUsers().then(setUsers).catch(console.error);
+  }, [id]);
+
+  const handleStatusChange = async (newStatus: string, extra: Record<string, unknown> = {}) => {
+    if (!id) return;
+    try {
+      const body: Record<string, unknown> = { status: newStatus, ...extra };
+      if (newStatus === "unassigned") body.assigned_to = null;
+      if (newStatus !== "wait_hold") body.wait_hold_reason = null;
+      const updated = await api.updateTicket(id, body);
+      setTicket((prev: any) => ({ ...prev, ...updated }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length || !id) return;
@@ -100,12 +129,27 @@ export default function TicketDetailPage() {
       <div className="detail-title-row">
         <span className="detail-ref">#{ticket.ref_number}</span>
         <h1>{ticket.title}</h1>
-        <span
-          className="status-badge status-badge-lg"
-          style={{ background: STATUS_COLORS[ticket.status] }}
+        <select
+          className="status-select status-select-lg"
+          value={ticket.status}
+          style={{ background: STATUS_COLORS[ticket.status], color: "#0e0f11" }}
+          onChange={(e) => {
+            const newStatus = e.target.value;
+            if (ticket.status === "unassigned" && newStatus === "assigned") {
+              setAssignModalUser("");
+              setAssignModal({ pendingStatus: newStatus });
+            } else if (newStatus === "wait_hold") {
+              setWaitHoldReason("");
+              setWaitHoldModal(true);
+            } else {
+              handleStatusChange(newStatus);
+            }
+          }}
         >
-          {ticket.status}
-        </span>
+          {STATUSES.map((s) => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </select>
       </div>
 
       {ticket.description && (
@@ -263,6 +307,76 @@ export default function TicketDetailPage() {
           <p className="empty-files">No files attached yet.</p>
         )}
       </div>
+
+      {/* ── Wait / Hold Modal ───────────────────────── */}
+      {waitHoldModal && (
+        <div className="modal-overlay" onClick={() => setWaitHoldModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="modal-title">Wait / Hold Reason</h2>
+            <p className="modal-body">Enter a reason for placing this ticket on hold.</p>
+            <textarea
+              className="modal-textarea"
+              value={waitHoldReason}
+              onChange={(e) => setWaitHoldReason(e.target.value)}
+              placeholder="Describe why this ticket is on hold…"
+              rows={4}
+              autoFocus
+            />
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setWaitHoldModal(false)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={!waitHoldReason.trim()}
+                onClick={async () => {
+                  await handleStatusChange("wait_hold", { wait_hold_reason: waitHoldReason });
+                  setWaitHoldModal(false);
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Assign User Modal ────────────────────────── */}
+      {assignModal && (
+        <div className="modal-overlay" onClick={() => setAssignModal(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="modal-title">Assign a user</h2>
+            <p className="modal-body">Select a user to assign to this ticket.</p>
+            <select
+              className="filter-select modal-select"
+              value={assignModalUser}
+              onChange={(e) => setAssignModalUser(e.target.value)}
+            >
+              <option value="">— Select user —</option>
+              {users.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.full_name || u.email}
+                </option>
+              ))}
+            </select>
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setAssignModal(null)}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                disabled={!assignModalUser}
+                onClick={async () => {
+                  await handleStatusChange(assignModal.pendingStatus, { assigned_to: assignModalUser });
+                  setAssignModal(null);
+                }}
+              >
+                Assign
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
