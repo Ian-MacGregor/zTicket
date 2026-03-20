@@ -418,13 +418,38 @@ a {
   flex-wrap: wrap;
 }
 
+.search-group {
+  display: flex;
+  flex: 1;
+  min-width: 280px;
+}
+
+.search-type-select {
+  padding: 9px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-right: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.search-type-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .search-input {
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
   padding: 9px 14px;
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -433,6 +458,8 @@ a {
 .search-input:focus {
   outline: none;
   border-color: var(--accent);
+  z-index: 1;
+  position: relative;
 }
 
 .filter-select {

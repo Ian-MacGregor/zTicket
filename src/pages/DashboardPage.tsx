@@ -48,6 +48,7 @@ export default function DashboardPage() {
   const [filterPriority, setFilterPriority] = useState("all");
   const [filterClient, setFilterClient] = useState("all");
   const [search, setSearch] = useState("");
+  const [searchType, setSearchType] = useState("description");
   const [sortBy, setSortBy] = useState("ref-desc");
   const [filterView, setFilterView] = useState("all");
   const [assignModal, setAssignModal] = useState<{ ticketId: string; pendingStatus: string } | null>(null);
@@ -76,6 +77,7 @@ export default function DashboardPage() {
     setFilterPriority("all");
     setFilterClient("all");
     setSearch("");
+    setSearchType("description");
     setSortBy("ref-desc");
     setFilterView("all");
   };
@@ -109,12 +111,32 @@ export default function DashboardPage() {
         if (t.reviewer?.id !== user?.id) return false;
         if (!["review"].includes(t.status)) return false;
       }
-      if (
-        search &&
-        !t.title.toLowerCase().includes(search.toLowerCase()) &&
-        !t.description?.toLowerCase().includes(search.toLowerCase())
-      )
-        return false;
+      if (search) {
+        const q = search.toLowerCase();
+        switch (searchType) {
+          case "description":
+            if (!t.title.toLowerCase().includes(q) && !t.description?.toLowerCase().includes(q)) return false;
+            break;
+          case "ref":
+            if (!String(t.ref_number ?? "").includes(q)) return false;
+            break;
+          case "client":
+            if (!(t.client?.name ?? "").toLowerCase().includes(q)) return false;
+            break;
+          case "assignee":
+            if (!(t.assignee?.full_name ?? "").toLowerCase().includes(q)) return false;
+            break;
+          case "reviewer":
+            if (!(t.reviewer?.full_name ?? "").toLowerCase().includes(q)) return false;
+            break;
+          case "created":
+            if (!formatDateTime(t.created_at).toLowerCase().includes(q)) return false;
+            break;
+          case "updated":
+            if (!formatDateTime(t.status_updated_at).toLowerCase().includes(q)) return false;
+            break;
+        }
+      }
       return true;
     })
     .sort((a, b) => {
@@ -230,14 +252,38 @@ export default function DashboardPage() {
 
       {/* ── Toolbar ─────────────────────────────────── */}
       <div className="toolbar">
-        <input
-          className="search-input"
-          type="text"
-          placeholder="Search tickets…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          disabled={loading}
-        />
+        <div className="search-group">
+          <select
+            className="search-type-select"
+            value={searchType}
+            onChange={(e) => { setSearchType(e.target.value); setSearch(""); }}
+            disabled={loading}
+          >
+            <option value="description">Description</option>
+            <option value="ref">Ticket #</option>
+            <option value="client">Client</option>
+            <option value="assignee">Assignee</option>
+            <option value="reviewer">Reviewer</option>
+            <option value="created">Date Created</option>
+            <option value="updated">Date Updated</option>
+          </select>
+          <input
+            className="search-input"
+            type={searchType === "ref" ? "number" : "text"}
+            placeholder={
+              searchType === "ref"      ? "Ticket #…"         :
+              searchType === "client"   ? "Client name…"      :
+              searchType === "assignee" ? "Assignee name…"    :
+              searchType === "reviewer" ? "Reviewer name…"    :
+              searchType === "created"  ? "e.g. 3/20/2026…"  :
+              searchType === "updated"  ? "e.g. 3/20/2026…"  :
+              "Search description…"
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            disabled={loading}
+          />
+        </div>
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
@@ -249,19 +295,6 @@ export default function DashboardPage() {
           <option value="high">High</option>
           <option value="medium">Medium</option>
           <option value="low">Low</option>
-        </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="filter-select"
-          disabled={loading}
-        >
-          <option value="all">All statuses</option>
-          <option value="unassigned">Unassigned</option>
-          <option value="wait_hold">Wait/Hold</option>
-          <option value="assigned">Assigned</option>
-          <option value="review">Review</option>
-          <option value="done">Done</option>
         </select>
         <select
           value={filterClient}
