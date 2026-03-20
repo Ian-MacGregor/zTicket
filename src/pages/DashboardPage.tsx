@@ -343,7 +343,9 @@ export default function DashboardPage() {
                 <span className="skeleton skeleton-title" />
                 <span className="skeleton skeleton-meta" />
               </div>
+              <div className="ticket-col-client"><span className="skeleton skeleton-meta" /></div>
               <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
+              <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
               <div className="ticket-col-files" />
               <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
             </div>
@@ -408,25 +410,32 @@ export default function DashboardPage() {
                 className="ticket-col-info"
                 onClick={() => navigate(`/tickets/${t.id}`)}
               >
-                <span className="ticket-title">
-                  {t.title}
-                  {t.client && (
-                    <span className="ticket-client-tag">{t.client.name}</span>
-                  )}
-                </span>
+                <span className="ticket-title">{t.title}</span>
                 <span className="ticket-meta">
-                  {t.assignee?.full_name || "Unassigned"}
-                  {t.reviewer ? <> &middot; Review: {t.reviewer.full_name}</> : null}
+                  {t.status === "wait_hold" && t.wait_hold_reason
+                    ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
+                    : <>&nbsp;</>}
                 </span>
-                {t.status === "wait_hold" && t.wait_hold_reason && (
-                  <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
-                )}
+              </div>
+
+              {/* Client */}
+              <div className="ticket-col-client">
+                <span className="ticket-col-text">{t.client?.name || "—"}</span>
               </div>
 
               {/* Priority */}
               <div className="ticket-col-priority">
                 <span className={`priority-tag priority-${t.priority}`}>
                   {PRIORITY_LABELS[t.priority]}
+                </span>
+              </div>
+
+              {/* Owner */}
+              <div className="ticket-col-owner">
+                <span className="ticket-col-text">
+                  {t.status === "review"
+                    ? (t.reviewer?.full_name || "None")
+                    : (t.assignee?.full_name || "None")}
                 </span>
               </div>
 

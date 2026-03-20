@@ -484,7 +484,7 @@ a {
 
 .ticket-row {
   display: grid;
-  grid-template-columns: 64px 100px 1fr 110px 40px 240px;
+  grid-template-columns: 64px 100px 1fr 110px 110px 130px 40px 240px;
   align-items: center;
   gap: 12px;
   padding: 12px 18px;
@@ -525,9 +525,21 @@ a {
   cursor: pointer;
 }
 
+.ticket-col-client {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .ticket-col-priority {
   display: flex;
   align-items: center;
+}
+
+.ticket-col-owner {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .ticket-col-files {
@@ -930,7 +942,9 @@ a {
     gap: 6px 10px;
   }
 
+  .ticket-col-client,
   .ticket-col-priority,
+  .ticket-col-owner,
   .ticket-col-files,
   .ticket-col-dates {
     grid-column: 3;
@@ -1017,6 +1031,14 @@ a {
 /* ============================================================
    CLIENT TAG (on dashboard ticket rows)
    ============================================================ */
+.ticket-col-text {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ticket-client-tag {
   display: inline-block;
   margin-left: 8px;
