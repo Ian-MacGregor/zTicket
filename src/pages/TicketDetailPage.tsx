@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
-  reserved: "var(--status-reserved)",
+  wait_hold: "var(--status-wait-hold)",
   assigned: "var(--status-assigned)",
   review: "var(--status-review)",
   complete: "var(--status-complete)",
@@ -182,6 +182,14 @@ export default function TicketDetailPage() {
           </span>
         </div>
       </div>
+
+      {/* ── Wait / Hold Reason ──────────────────────── */}
+      {ticket.status === "wait_hold" && ticket.wait_hold_reason && (
+        <div className="detail-section">
+          <h2>Wait / Hold Reason</h2>
+          <p className="detail-description">{ticket.wait_hold_reason}</p>
+        </div>
+      )}
 
       {/* ── Comments ────────────────────────────────── */}
       {ticket.comments && (

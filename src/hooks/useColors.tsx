@@ -17,7 +17,7 @@ export interface ColorSettings {
   text2: string;
   // Statuses
   statusUnassigned: string;
-  statusReserved: string;
+  statusWaitHold: string;
   statusAssigned: string;
   statusReview: string;
   statusComplete: string;
@@ -35,7 +35,7 @@ export const DEFAULT_COLORS: ColorSettings = {
   text1: "#e8eaed",
   text2: "#8b8f98",
   statusUnassigned: "#6b7280",
-  statusReserved: "#a855f7",
+  statusWaitHold: "#a855f7",
   statusAssigned: "#5b8def",
   statusReview: "#d4a853",
   statusComplete: "#4ecb71",
@@ -75,7 +75,7 @@ function applyColors(c: ColorSettings) {
   root.style.setProperty("--text-muted", c.text2);
 
   root.style.setProperty("--status-unassigned", c.statusUnassigned);
-  root.style.setProperty("--status-reserved", c.statusReserved);
+  root.style.setProperty("--status-wait-hold", c.statusWaitHold);
   root.style.setProperty("--status-assigned", c.statusAssigned);
   root.style.setProperty("--status-review", c.statusReview);
   root.style.setProperty("--status-complete", c.statusComplete);

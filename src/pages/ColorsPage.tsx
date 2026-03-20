@@ -21,7 +21,7 @@ const SECTIONS: { title: string; fields: ColorFieldDef[] }[] = [
     title: "Statuses",
     fields: [
       { key: "statusUnassigned", label: "Unassigned" },
-      { key: "statusReserved", label: "Reserved" },
+      { key: "statusWaitHold", label: "Wait/Hold" },
       { key: "statusAssigned", label: "Assigned" },
       { key: "statusReview", label: "Review" },
       { key: "statusComplete", label: "Complete" },

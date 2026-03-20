@@ -26,6 +26,7 @@ export default function TicketFormPage() {
     quoted_price: "",
     quoted_amf: "",
     comments: "",
+    wait_hold_reason: "",
   });
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function TicketFormPage() {
             quoted_price: t.quoted_price != null ? String(t.quoted_price) : "",
             quoted_amf: t.quoted_amf != null ? String(t.quoted_amf) : "",
             comments: t.comments || "",
+            wait_hold_reason: t.wait_hold_reason || "",
           })
         )
         .catch(console.error)
@@ -85,6 +87,12 @@ export default function TicketFormPage() {
       return;
     }
 
+    if (form.status === "wait_hold" && !form.wait_hold_reason.trim()) {
+      setError("A wait/hold reason is required when status is Wait/Hold.");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
       ...form,
       status: !isEdit ? (form.assigned_to ? "assigned" : "unassigned") : form.status,
@@ -96,6 +104,7 @@ export default function TicketFormPage() {
       quoted_price: form.quoted_price ? parseFloat(form.quoted_price) : null,
       quoted_amf: form.quoted_amf ? parseFloat(form.quoted_amf) : null,
       comments: form.comments || null,
+      wait_hold_reason: form.status === "wait_hold" ? form.wait_hold_reason || null : null,
     };
 
     try {
@@ -177,10 +186,11 @@ export default function TicketFormPage() {
                 onChange={(e) => {
                   set("status", e.target.value);
                   if (e.target.value === "unassigned") set("assigned_to", "");
+                  if (e.target.value !== "wait_hold") set("wait_hold_reason", "");
                 }}
               >
                 <option value="unassigned">Unassigned</option>
-                <option value="reserved">Reserved</option>
+                <option value="wait_hold">Wait/Hold</option>
                 <option value="assigned">Assigned</option>
                 <option value="review">Review</option>
                 <option value="complete">Complete</option>
@@ -189,6 +199,20 @@ export default function TicketFormPage() {
             </div>
           )}
         </div>
+
+        {/* Wait / Hold Reason */}
+        {form.status === "wait_hold" && (
+          <div className="form-group">
+            <label htmlFor="wait_hold_reason">Wait / Hold Reason *</label>
+            <textarea
+              id="wait_hold_reason"
+              rows={3}
+              value={form.wait_hold_reason}
+              onChange={(e) => set("wait_hold_reason", e.target.value)}
+              placeholder="Describe why this ticket is on hold…"
+            />
+          </div>
+        )}
 
         {/* Assigned / Reviewer */}
         <div className="form-row">

@@ -23,7 +23,7 @@
 
   /* Status */
   --status-unassigned: #6b7280;
-  --status-reserved: #a855f7;
+  --status-wait-hold: #a855f7;
   --status-assigned: #5b8def;
   --status-review: #d4a853;
   --status-complete: #4ecb71;
@@ -1221,6 +1221,34 @@ a {
 
 .modal-select {
   width: 100%;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.ticket-hold-reason {
+  font-size: 0.78rem;
+  color: var(--status-wait-hold);
+  font-style: italic;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .modal-actions {
