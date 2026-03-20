@@ -37,9 +37,7 @@ function formatDateTime(dateStr: string | null): string {
 }
 
 function getLastStatusDate(ticket: any): string | null {
-  if (ticket.date_sent) return ticket.date_sent;
-  if (ticket.date_completed) return ticket.date_completed;
-  return ticket.created_at;
+  return ticket.status_updated_at || ticket.created_at;
 }
 
 export default function DashboardPage() {
