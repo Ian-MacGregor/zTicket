@@ -448,9 +448,22 @@ export default function DashboardPage() {
         >
           ← Prev
         </button>
-        <span className="pagination-info">
-          Page {page} of {totalPages}
-        </span>
+        <div className="pagination-center">
+          <span className="pagination-info">Page {page} of {totalPages}</span>
+          <select
+            className="filter-select"
+            value={limit}
+            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+          >
+            <option value={10}>10 / page</option>
+            <option value={25}>25 / page</option>
+            <option value={50}>50 / page</option>
+            <option value={100}>100 / page</option>
+          </select>
+          <span className="sort-count">
+            {total === 0 ? "0 tickets" : `${rangeStart}–${rangeEnd} of ${total} ticket${total !== 1 ? "s" : ""}`}
+          </span>
+        </div>
         <button
           className="btn btn-ghost btn-sm"
           disabled={page >= totalPages || loading}
@@ -458,19 +471,6 @@ export default function DashboardPage() {
         >
           Next →
         </button>
-        <select
-          className="filter-select"
-          value={limit}
-          onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
-        >
-          <option value={10}>10 / page</option>
-          <option value={25}>25 / page</option>
-          <option value={50}>50 / page</option>
-          <option value={100}>100 / page</option>
-        </select>
-        <span className="sort-count">
-          {total === 0 ? "0 tickets" : `${rangeStart}–${rangeEnd} of ${total} ticket${total !== 1 ? "s" : ""}`}
-        </span>
       </div>
 
       {/* ── Wait / Hold Modal ───────────────────────── */}
