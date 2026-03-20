@@ -2,6 +2,8 @@
 
 Internal ticketing system for managing development tasks, client work, and code reviews. Built with React, Vite, and Supabase Auth. Deployed to GitHub Pages.
 
+The repo for the backend of this application is here: https://github.com/Ian-MacGregor/zTicket-api
+
 ---
 
 ## Stack
@@ -22,18 +24,21 @@ Email and password authentication powered by Supabase. Only email addresses adde
 ### Dashboard (`/`)
 The main view showing all tickets across the company. Features include:
 
-- **Stat cards** — total, unassigned, reserved, assigned, review, complete, and sent counts. Clicking a status card filters the list; clicking "total" resets all filters.
-- **Filters** — priority, status, client, and text search.
-- **Sort** — ticket number, priority, updated date, status, or client (ascending/descending).
+- **Stat cards** — global counts for total, unassigned, wait/hold, assigned, review, and done. Counts always reflect the whole database regardless of active filters. Clicking a status card filters the list; clicking "total" resets all filters. The active filter card is highlighted.
+- **Pagination** — tickets are loaded 10 per page by default (configurable to 25, 50, or 100). All filtering, sorting, and searching is performed server-side so sort order and result counts are accurate across the full dataset.
+- **Filters** — priority and client dropdowns. Status filtering via stat card clicks.
+- **Search** — joined type selector + text input. Search types: description, ticket #, client, assignee, reviewer, date created, date updated. Search is debounced and runs server-side.
+- **Column header sorting** — click any column header (# / Status / Description / Client / Priority / Owner / Dates) to sort by that column; click again to reverse. Active sort column shows ↑ or ↓ indicator.
 - **My Tickets / My Reviews** — quick-filter buttons that show tickets assigned to or awaiting review by the current user.
-- **Inline status changes** — the status badge on each ticket row is a dropdown; changing it updates the ticket immediately without leaving the dashboard.
+- **Inline status changes** — the status dropdown on each ticket row updates the ticket immediately without leaving the dashboard. Changing to "assigned" from "unassigned" opens a user-picker modal; changing to "wait/hold" prompts for a reason.
 - **Visual highlights** — tickets assigned to the current user get a colored outline matching the "assigned" status color. Tickets awaiting the current user's review get an outline matching the "review" status color.
 - **Skeleton loading** — stat cards and ticket rows show animated placeholders while data loads.
+- **Auto-refresh** — ticket list and stat cards refresh automatically every 30 seconds.
 
 ### Ticket Detail (`/tickets/:id`)
-Full ticket view showing all metadata, file attachments, and Gmail links. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket.
+Full ticket view showing all metadata, file attachments, and Gmail links. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
 
-Fields displayed: reference number, title, description, status, priority, assigned developer, reviewer, client, created by, date assigned, date completed, date sent, Gmail links, and attached files.
+Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), comments, Gmail links, and attached files.
 
 ### Create / Edit Ticket (`/tickets/new`, `/tickets/:id/edit`)
 Form for creating or editing tickets. Fields include:
@@ -42,10 +47,12 @@ Form for creating or editing tickets. Fields include:
 - Priority and status (status only shown when editing)
 - Assigned developer and reviewer (dropdowns populated from registered users)
 - Client (dropdown populated from the clients list)
-- Quoted time (free text, e.g. "2 weeks" or "40 hours")
-- Quoted price and quoted AMF increase (dollar amounts)
+- **Quote Required** checkbox — when unchecked (default), the quoted fields are hidden and cleared on save. When checked, the following three fields appear:
+  - Quoted time (free text, e.g. "2 weeks" or "40 hours")
+  - Quoted price and quoted AMF increase (dollar amounts)
 - Comments (internal notes)
 - Gmail links (add multiple)
+- Wait/hold reason (only shown when status is set to Wait/Hold)
 
 ### Clients (`/clients`)
 Manage the client list and their contacts. Each client has a name and a contact list. Contacts have a name, email, phone, and role/title. Clients appear in the ticket form dropdown and as filter options on the dashboard.
@@ -54,7 +61,7 @@ Manage the client list and their contacts. Each client has a name and a contact 
 Per-user color customization with three categories:
 
 - **Foreground / Background** — controls the card color, page background, and two text shades across the entire app.
-- **Statuses** — sets the color for each status badge (unassigned, reserved, assigned, review, complete, sent), the stat card indicators, and the ticket highlight outlines.
+- **Statuses** — sets the color for each status badge (unassigned, wait/hold, assigned, review, done), the stat card indicators, and the ticket highlight outlines.
 - **Priorities** — sets the color for each priority label (critical, high, medium, low).
 
 Each color can be set via a native color wheel or by entering a hex (`#RRGGBB`) or ARGB (`FFRRGGBB`) code. A live preview shows two mock ticket rows using the draft colors before saving. Color settings are per-user and persist across sessions.

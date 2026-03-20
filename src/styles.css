@@ -404,6 +404,10 @@ a {
   border-color: var(--text-muted);
 }
 
+.stat-card-active {
+  border-color: var(--accent) !important;
+}
+
 .stat-value {
   display: block;
   font-size: 1.8rem;
@@ -497,6 +501,23 @@ a {
 .filter-select:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+/* Pagination */
+.pagination-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 4px;
+  flex-wrap: wrap;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: center;
 }
 
 /* Action Bar */

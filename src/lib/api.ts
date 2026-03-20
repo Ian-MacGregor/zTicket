@@ -38,7 +38,18 @@ async function request<T>(
 
 export const api = {
   // Tickets
-  listTickets: () => request<any[]>("/api/tickets"),
+  listTickets: (params: Record<string, string | number | undefined> = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== "") qs.set(k, String(v));
+    });
+    const q = qs.toString();
+    return request<{ data: any[]; total: number }>(`/api/tickets${q ? "?" + q : ""}`);
+  },
+  getTicketStats: () =>
+    request<{ total: number; unassigned: number; wait_hold: number; assigned: number; review: number; done: number }>(
+      "/api/tickets/stats"
+    ),
   getTicket: (id: string) => request<any>(`/api/tickets/${id}`),
   createTicket: (body: any) =>
     request<any>("/api/tickets", {

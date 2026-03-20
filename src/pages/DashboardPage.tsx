@@ -5,27 +5,27 @@ import { useAuth } from "../hooks/useAuth";
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
-  wait_hold: "var(--status-wait-hold)",
-  assigned: "var(--status-assigned)",
-  review: "var(--status-review)",
-  done: "var(--status-done)",
+  wait_hold:  "var(--status-wait-hold)",
+  assigned:   "var(--status-assigned)",
+  review:     "var(--status-review)",
+  done:       "var(--status-done)",
 };
 
 const STATUS_LABELS: Record<string, string> = {
   unassigned: "unassigned",
-  wait_hold: "wait/hold",
-  assigned: "assigned",
-  review: "review",
-  done: "done",
+  wait_hold:  "wait/hold",
+  assigned:   "assigned",
+  review:     "review",
+  done:       "done",
 };
 
 const STATUSES = ["unassigned", "wait_hold", "assigned", "review", "done"];
 
 const PRIORITY_LABELS: Record<string, string> = {
   critical: "⬤ Critical",
-  high: "◉ High",
-  medium: "○ Medium",
-  low: "◌ Low",
+  high:     "◉ High",
+  medium:   "○ Medium",
+  low:      "◌ Low",
 };
 
 function formatDateTime(dateStr: string | null): string {
@@ -41,36 +41,84 @@ function getLastStatusDate(ticket: any): string | null {
 export default function DashboardPage() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
-  const [tickets, setTickets] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterPriority, setFilterPriority] = useState("all");
-  const [filterClient, setFilterClient] = useState("all");
-  const [search, setSearch] = useState("");
-  const [searchType, setSearchType] = useState("description");
-  const [sortBy, setSortBy] = useState("ref-desc");
-  const [filterView, setFilterView] = useState("all");
-  const [assignModal, setAssignModal] = useState<{ ticketId: string; pendingStatus: string } | null>(null);
-  const [assignModalUser, setAssignModalUser] = useState("");
-  const [waitHoldModal, setWaitHoldModal] = useState<{ ticketId: string } | null>(null);
-  const [waitHoldReason, setWaitHoldReason] = useState("");
 
+  // ── Ticket data ──────────────────────────────────────────
+  const [tickets, setTickets]   = useState<any[]>([]);
+  const [total, setTotal]       = useState(0);
+  const [stats, setStats]       = useState({ total: 0, unassigned: 0, wait_hold: 0, assigned: 0, review: 0, done: 0 });
+  const [clients, setClients]   = useState<{ id: string; name: string }[]>([]);
+  const [users, setUsers]       = useState<any[]>([]);
+  const [loading, setLoading]   = useState(true);
+
+  // ── Pagination ───────────────────────────────────────────
+  const [page, setPage]   = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  // ── Filters & sort ───────────────────────────────────────
+  const [filterStatus,   setFilterStatus]   = useState("all");
+  const [filterPriority, setFilterPriority] = useState("all");
+  const [filterClient,   setFilterClient]   = useState("all");
+  const [filterView,     setFilterView]     = useState("all");
+  const [search,         setSearch]         = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchType,     setSearchType]     = useState("description");
+  const [sortBy,         setSortBy]         = useState("ref-desc");
+
+  // ── Modals ───────────────────────────────────────────────
+  const [assignModal,     setAssignModal]     = useState<{ ticketId: string; pendingStatus: string } | null>(null);
+  const [assignModalUser, setAssignModalUser] = useState("");
+  const [waitHoldModal,   setWaitHoldModal]   = useState<{ ticketId: string } | null>(null);
+  const [waitHoldReason,  setWaitHoldReason]  = useState("");
+
+  // ── Refresh key — incremented by polling and status changes ─
+  const [fetchKey, setFetchKey] = useState(0);
+
+  // ── Debounce search (400 ms) — also resets page ──────────
   useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // ── Main fetch: tickets (server-side filtered/sorted/paginated) ─
+  useEffect(() => {
+    setLoading(true);
     api
-      .listTickets()
-      .then(setTickets)
+      .listTickets({
+        page, limit, sort: sortBy,
+        status: filterStatus, priority: filterPriority, client: filterClient,
+        view: filterView, search: debouncedSearch, searchType,
+        userId: user?.id || "",
+      })
+      .then((result) => {
+        setTickets(result.data);
+        setTotal(result.total);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, [page, limit, sortBy, filterStatus, filterPriority, filterClient, filterView, debouncedSearch, searchType, fetchKey]);
 
+  // ── One-time setup: stats, clients, users, polling ───────
+  useEffect(() => {
+    api.getTicketStats().then(setStats).catch(console.error);
+    api.listClients().then(setClients).catch(console.error);
     api.listUsers().then(setUsers).catch(console.error);
 
     const interval = setInterval(() => {
-      api.listTickets().then(setTickets).catch(console.error);
+      setFetchKey((k) => k + 1);
+      api.getTicketStats().then(setStats).catch(console.error);
     }, 30000);
-
     return () => clearInterval(interval);
   }, []);
+
+  // ── Reset page when any filter/sort changes ───────────────
+  // (search reset is handled in the debounce effect above)
+  const setStatusFilter = (v: string) => { setFilterStatus(v);   setPage(1); };
+  const setPriorityFilter = (v: string) => { setFilterPriority(v); setPage(1); };
+  const setClientFilter = (v: string) => { setFilterClient(v);   setPage(1); };
+  const setViewFilter = (v: string) => { setFilterView(v);     setPage(1); };
 
   const resetFilters = () => {
     setFilterStatus("all");
@@ -80,143 +128,37 @@ export default function DashboardPage() {
     setSearchType("description");
     setSortBy("ref-desc");
     setFilterView("all");
+    setPage(1);
   };
 
-  // Derive unique client list from tickets
-  const clientList = tickets.reduce((acc: { id: string; name: string }[], t) => {
-    if (t.client && !acc.find((c) => c.id === t.client.id)) {
-      acc.push({ id: t.client.id, name: t.client.name });
-    }
-    return acc;
-  }, []).sort((a, b) => a.name.localeCompare(b.name));
-
-  const PRIORITY_ORDER: Record<string, number> = {
-    low: 0, medium: 1, high: 2, critical: 3,
-  };
-
-  const STATUS_ORDER: Record<string, number> = {
-    unassigned: 0, wait_hold: 1, assigned: 2, review: 3, done: 4,
-  };
-
-  const filtered = tickets
-    .filter((t) => {
-      if (filterStatus !== "all" && t.status !== filterStatus) return false;
-      if (filterPriority !== "all" && t.priority !== filterPriority) return false;
-      if (filterClient !== "all" && t.client?.id !== filterClient) return false;
-      if (filterView === "my-tickets") {
-        if (t.assignee?.id !== user?.id) return false;
-        if (!["wait_hold", "assigned", "review"].includes(t.status)) return false;
-      }
-      if (filterView === "my-reviews") {
-        if (t.reviewer?.id !== user?.id) return false;
-        if (!["review"].includes(t.status)) return false;
-      }
-      if (search) {
-        const q = search.toLowerCase();
-        switch (searchType) {
-          case "description":
-            if (!t.title.toLowerCase().includes(q) && !t.description?.toLowerCase().includes(q)) return false;
-            break;
-          case "ref":
-            if (!String(t.ref_number ?? "").includes(q)) return false;
-            break;
-          case "client":
-            if (!(t.client?.name ?? "").toLowerCase().includes(q)) return false;
-            break;
-          case "assignee":
-            if (!(t.assignee?.full_name ?? "").toLowerCase().includes(q)) return false;
-            break;
-          case "reviewer":
-            if (!(t.reviewer?.full_name ?? "").toLowerCase().includes(q)) return false;
-            break;
-          case "created":
-            if (!formatDateTime(t.created_at).toLowerCase().includes(q)) return false;
-            break;
-          case "updated":
-            if (!formatDateTime(t.status_updated_at).toLowerCase().includes(q)) return false;
-            break;
-        }
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "priority-asc":
-          return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-        case "priority-desc":
-          return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
-        case "ref-asc":
-          return (a.ref_number || 0) - (b.ref_number || 0);
-        case "ref-desc":
-          return (b.ref_number || 0) - (a.ref_number || 0);
-        case "updated-desc":
-          return new Date(getLastStatusDate(b) || 0).getTime() - new Date(getLastStatusDate(a) || 0).getTime();
-        case "updated-asc":
-          return new Date(getLastStatusDate(a) || 0).getTime() - new Date(getLastStatusDate(b) || 0).getTime();
-        case "status-asc":
-          return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-        case "status-desc":
-          return STATUS_ORDER[b.status] - STATUS_ORDER[a.status];
-        case "client-asc":
-          return (a.client?.name || "zzz").localeCompare(b.client?.name || "zzz");
-        case "client-desc":
-          return (b.client?.name || "").localeCompare(a.client?.name || "");
-        case "title-asc":
-          return a.title.localeCompare(b.title);
-        case "title-desc":
-          return b.title.localeCompare(a.title);
-        case "owner-asc": {
-          const aOwner = a.status === "review" ? (a.reviewer?.full_name || "") : (a.assignee?.full_name || "");
-          const bOwner = b.status === "review" ? (b.reviewer?.full_name || "") : (b.assignee?.full_name || "");
-          return aOwner.localeCompare(bOwner);
-        }
-        case "owner-desc": {
-          const aOwner = a.status === "review" ? (a.reviewer?.full_name || "") : (a.assignee?.full_name || "");
-          const bOwner = b.status === "review" ? (b.reviewer?.full_name || "") : (b.assignee?.full_name || "");
-          return bOwner.localeCompare(aOwner);
-        }
-        case "created-asc":
-          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
-        case "created-desc":
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-        default:
-          return 0;
-      }
-    });
-
-  const stats = {
-    total: tickets.length,
-    unassigned: tickets.filter((t) => t.status === "unassigned").length,
-    wait_hold: tickets.filter((t) => t.status === "wait_hold").length,
-    assigned: tickets.filter((t) => t.status === "assigned").length,
-    review: tickets.filter((t) => t.status === "review").length,
-    done: tickets.filter((t) => t.status === "done").length,
-  };
-
+  // ── Sort helpers ─────────────────────────────────────────
   const [sortCol, sortDir] = sortBy.split("-") as [string, "asc" | "desc"];
   const handleColSort = (col: string, defaultDir: "asc" | "desc" = "desc") => {
-    if (sortCol === col) {
-      setSortBy(`${col}-${sortDir === "asc" ? "desc" : "asc"}`);
-    } else {
-      setSortBy(`${col}-${defaultDir}`);
-    }
+    setSortBy(sortCol === col ? `${col}-${sortDir === "asc" ? "desc" : "asc"}` : `${col}-${defaultDir}`);
+    setPage(1);
   };
   const sortArrow = (col: string) =>
     sortCol === col ? (sortDir === "asc" ? " ↑" : " ↓") : null;
 
+  // ── Status change (dashboard dropdown) ───────────────────
   const handleStatusChange = async (ticketId: string, newStatus: string, extra: Record<string, unknown> = {}) => {
     try {
       const body: Record<string, unknown> = { status: newStatus, ...extra };
       if (newStatus === "unassigned") body.assigned_to = null;
-      if (newStatus !== "wait_hold") body.wait_hold_reason = null;
-      const updated = await api.updateTicket(ticketId, body);
-      setTickets((prev) =>
-        prev.map((t) => (t.id === ticketId ? { ...t, ...updated } : t))
-      );
+      if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
+      await api.updateTicket(ticketId, body);
+      // Refetch current page and global stats
+      setFetchKey((k) => k + 1);
+      api.getTicketStats().then(setStats).catch(console.error);
     } catch (err) {
       console.error(err);
     }
   };
+
+  // ── Pagination helpers ────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const rangeStart = total === 0 ? 0 : (page - 1) * limit + 1;
+  const rangeEnd   = Math.min(page * limit, total);
 
   return (
     <div className="dashboard">
@@ -228,53 +170,34 @@ export default function DashboardPage() {
         </div>
         <div className="topbar-right">
           <span className="topbar-email">{user?.email}</span>
-          <Link to="/colors" className="btn btn-ghost">
-            Colors
-          </Link>
-          <Link to="/clients" className="btn btn-ghost">
-            Clients
-          </Link>
-          <button className="btn btn-ghost" onClick={signOut}>
-            Sign out
-          </button>
+          <Link to="/colors" className="btn btn-ghost">Colors</Link>
+          <Link to="/clients" className="btn btn-ghost">Clients</Link>
+          <button className="btn btn-ghost" onClick={signOut}>Sign out</button>
         </div>
       </header>
 
-      {/* ── Stats Row ───────────────────────────────── */}
+      {/* ── Stats Row (global counts — unaffected by filters) ─ */}
       <div className="stats-row">
-        {loading
+        {loading && tickets.length === 0
           ? ["total", "unassigned", "wait_hold", "assigned", "review", "done"].map((key) => (
               <div key={key} className="stat-card">
                 <span className="skeleton skeleton-value" />
                 <span className="stat-label">{key}</span>
-                {key !== "total" && (
-                  <span
-                    className="stat-dot"
-                    style={{ background: STATUS_COLORS[key] }}
-                  />
-                )}
+                {key !== "total" && <span className="stat-dot" style={{ background: STATUS_COLORS[key] }} />}
               </div>
             ))
           : Object.entries(stats).map(([key, val]) => (
               <div
                 key={key}
-                className="stat-card clickable"
+                className={`stat-card clickable${filterStatus === key ? " stat-card-active" : ""}`}
                 onClick={() => {
-                  if (key === "total") {
-                    resetFilters();
-                  } else {
-                    setFilterStatus(filterStatus === key ? "all" : key);
-                  }
+                  if (key === "total") resetFilters();
+                  else setStatusFilter(filterStatus === key ? "all" : key);
                 }}
               >
                 <span className="stat-value">{val}</span>
                 <span className="stat-label">{key}</span>
-                {key !== "total" && (
-                  <span
-                    className="stat-dot"
-                    style={{ background: STATUS_COLORS[key] }}
-                  />
-                )}
+                {key !== "total" && <span className="stat-dot" style={{ background: STATUS_COLORS[key] }} />}
               </div>
             ))}
       </div>
@@ -284,22 +207,20 @@ export default function DashboardPage() {
         <div className="action-bar-left">
           <button
             className={`btn ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setFilterView(filterView === "my-tickets" ? "all" : "my-tickets")}
+            onClick={() => setViewFilter(filterView === "my-tickets" ? "all" : "my-tickets")}
             disabled={loading}
           >
             My Tickets
           </button>
           <button
             className={`btn ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setFilterView(filterView === "my-reviews" ? "all" : "my-reviews")}
+            onClick={() => setViewFilter(filterView === "my-reviews" ? "all" : "my-reviews")}
             disabled={loading}
           >
             My Reviews
           </button>
         </div>
-        <Link to="/tickets/new" className="btn btn-primary">
-          + New Ticket
-        </Link>
+        <Link to="/tickets/new" className="btn btn-primary">+ New Ticket</Link>
       </div>
 
       {/* ── Filter Bar ──────────────────────────────── */}
@@ -323,12 +244,12 @@ export default function DashboardPage() {
             className="search-input"
             type={searchType === "ref" ? "number" : "text"}
             placeholder={
-              searchType === "ref"      ? "Ticket #…"         :
-              searchType === "client"   ? "Client name…"      :
-              searchType === "assignee" ? "Assignee name…"    :
-              searchType === "reviewer" ? "Reviewer name…"    :
-              searchType === "created"  ? "e.g. 3/20/2026…"  :
-              searchType === "updated"  ? "e.g. 3/20/2026…"  :
+              searchType === "ref"      ? "Ticket #…"        :
+              searchType === "client"   ? "Client name…"     :
+              searchType === "assignee" ? "Assignee name…"   :
+              searchType === "reviewer" ? "Reviewer name…"   :
+              searchType === "created"  ? "e.g. 3/20/2026…" :
+              searchType === "updated"  ? "e.g. 3/20/2026…" :
               "Search description…"
             }
             value={search}
@@ -338,7 +259,7 @@ export default function DashboardPage() {
         </div>
         <select
           value={filterPriority}
-          onChange={(e) => setFilterPriority(e.target.value)}
+          onChange={(e) => setPriorityFilter(e.target.value)}
           className="filter-select"
           disabled={loading}
         >
@@ -350,18 +271,15 @@ export default function DashboardPage() {
         </select>
         <select
           value={filterClient}
-          onChange={(e) => setFilterClient(e.target.value)}
+          onChange={(e) => setClientFilter(e.target.value)}
           className="filter-select"
           disabled={loading}
         >
           <option value="all">All clients</option>
-          {clientList.map((cl) => (
-            <option key={cl.id} value={cl.id}>
-              {cl.name}
-            </option>
+          {clients.map((cl) => (
+            <option key={cl.id} value={cl.id}>{cl.name}</option>
           ))}
         </select>
-        <span className="sort-count">{filtered.length} ticket{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* ── Ticket List ─────────────────────────────── */}
@@ -393,7 +311,7 @@ export default function DashboardPage() {
             </div>
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : tickets.length === 0 ? (
         <div className="empty-state">
           <p>No tickets match your filters.</p>
         </div>
@@ -423,110 +341,137 @@ export default function DashboardPage() {
               Dates{sortArrow("updated")}
             </div>
           </div>
-          {filtered.map((t) => {
+
+          {tickets.map((t) => {
             const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
-            const isMyReview = t.status === "review" && t.reviewer?.id === user?.id;
+            const isMyReview     = t.status === "review"   && t.reviewer?.id === user?.id;
             const rowClass = [
               "ticket-row",
               isMyAssignment ? "ticket-row-my-assigned" : "",
-              isMyReview ? "ticket-row-my-review" : "",
+              isMyReview     ? "ticket-row-my-review"   : "",
             ].filter(Boolean).join(" ");
 
             return (
-            <div key={t.id} className={rowClass}>
-              {/* Ref */}
-              <div className="ticket-col-ref">
-                <span className="ticket-ref">#{t.ref_number}</span>
-              </div>
+              <div key={t.id} className={rowClass}>
+                {/* Ref */}
+                <div className="ticket-col-ref">
+                  <span className="ticket-ref">#{t.ref_number}</span>
+                </div>
 
-              {/* Status dropdown */}
-              <div className="ticket-col-status">
-                <select
-                  className="status-select"
-                  value={t.status}
-                  style={{
-                    background: STATUS_COLORS[t.status],
-                    color: "#0e0f11",
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation();
-                    const newStatus = e.target.value;
-                    if (t.status === "unassigned" && newStatus === "assigned") {
-                      setAssignModalUser("");
-                      setAssignModal({ ticketId: t.id, pendingStatus: newStatus });
-                    } else if (newStatus === "wait_hold") {
-                      setWaitHoldReason("");
-                      setWaitHoldModal({ ticketId: t.id });
-                    } else {
-                      handleStatusChange(t.id, newStatus);
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {STATUS_LABELS[s]}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {/* Status dropdown */}
+                <div className="ticket-col-status">
+                  <select
+                    className="status-select"
+                    value={t.status}
+                    style={{ background: STATUS_COLORS[t.status], color: "#0e0f11" }}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      const newStatus = e.target.value;
+                      if (t.status === "unassigned" && newStatus === "assigned") {
+                        setAssignModalUser("");
+                        setAssignModal({ ticketId: t.id, pendingStatus: newStatus });
+                      } else if (newStatus === "wait_hold") {
+                        setWaitHoldReason("");
+                        setWaitHoldModal({ ticketId: t.id });
+                      } else {
+                        handleStatusChange(t.id, newStatus);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Title + meta — clickable to detail */}
-              <div
-                className="ticket-col-info"
-                onClick={() => navigate(`/tickets/${t.id}`)}
-              >
-                <span className="ticket-title">{t.title}</span>
-                <span className="ticket-meta">
-                  {t.status === "wait_hold" && t.wait_hold_reason
-                    ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
-                    : <>&nbsp;</>}
-                </span>
-              </div>
-
-              {/* Client */}
-              <div className="ticket-col-client">
-                <span className="ticket-col-text">{t.client?.name || "—"}</span>
-              </div>
-
-              {/* Priority */}
-              <div className="ticket-col-priority">
-                <span className={`priority-tag priority-${t.priority}`}>
-                  {PRIORITY_LABELS[t.priority]}
-                </span>
-              </div>
-
-              {/* Owner */}
-              <div className="ticket-col-owner">
-                <span className="ticket-col-text">
-                  {t.status === "review"
-                    ? (t.reviewer?.full_name || "None")
-                    : (t.assignee?.full_name || "None")}
-                </span>
-              </div>
-
-              {/* Files */}
-              <div className="ticket-col-files">
-                {t.files?.length > 0 && (
-                  <span className="file-count">
-                    <svg className="icon-clip" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12.5 7.5l-5.5 5.5a3 3 0 01-4.24-4.24l6.36-6.36a2 2 0 012.83 2.83L5.58 11.6a1 1 0 01-1.41-1.41L10 4.35" />
-                    </svg>
-                    {t.files.length}
+                {/* Title + meta */}
+                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
+                  <span className="ticket-title">{t.title}</span>
+                  <span className="ticket-meta">
+                    {t.status === "wait_hold" && t.wait_hold_reason
+                      ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
+                      : <>&nbsp;</>}
                   </span>
-                )}
-              </div>
+                </div>
 
-              {/* Dates */}
-              <div className="ticket-col-dates">
-                <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
-                <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+                {/* Client */}
+                <div className="ticket-col-client">
+                  <span className="ticket-col-text">{t.client?.name || "—"}</span>
+                </div>
+
+                {/* Priority */}
+                <div className="ticket-col-priority">
+                  <span className={`priority-tag priority-${t.priority}`}>
+                    {PRIORITY_LABELS[t.priority]}
+                  </span>
+                </div>
+
+                {/* Owner */}
+                <div className="ticket-col-owner">
+                  <span className="ticket-col-text">
+                    {t.status === "review"
+                      ? (t.reviewer?.full_name  || "None")
+                      : (t.assignee?.full_name  || "None")}
+                  </span>
+                </div>
+
+                {/* Files */}
+                <div className="ticket-col-files">
+                  {t.files?.length > 0 && (
+                    <span className="file-count">
+                      <svg className="icon-clip" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12.5 7.5l-5.5 5.5a3 3 0 01-4.24-4.24l6.36-6.36a2 2 0 012.83 2.83L5.58 11.6a1 1 0 01-1.41-1.41L10 4.35" />
+                      </svg>
+                      {t.files.length}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dates */}
+                <div className="ticket-col-dates">
+                  <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
+                  <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+                </div>
               </div>
-            </div>
             );
           })}
         </div>
       )}
+
+      {/* ── Pagination ──────────────────────────────── */}
+      <div className="pagination-row">
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={page <= 1 || loading}
+          onClick={() => setPage((p) => p - 1)}
+        >
+          ← Prev
+        </button>
+        <span className="pagination-info">
+          Page {page} of {totalPages}
+        </span>
+        <button
+          className="btn btn-ghost btn-sm"
+          disabled={page >= totalPages || loading}
+          onClick={() => setPage((p) => p + 1)}
+        >
+          Next →
+        </button>
+        <select
+          className="filter-select"
+          value={limit}
+          onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+        >
+          <option value={10}>10 / page</option>
+          <option value={25}>25 / page</option>
+          <option value={50}>50 / page</option>
+          <option value={100}>100 / page</option>
+        </select>
+        <span className="sort-count">
+          {total === 0 ? "0 tickets" : `${rangeStart}–${rangeEnd} of ${total} ticket${total !== 1 ? "s" : ""}`}
+        </span>
+      </div>
 
       {/* ── Wait / Hold Modal ───────────────────────── */}
       {waitHoldModal && (
@@ -543,9 +488,7 @@ export default function DashboardPage() {
               autoFocus
             />
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setWaitHoldModal(null)}>
-                Cancel
-              </button>
+              <button className="btn btn-ghost" onClick={() => setWaitHoldModal(null)}>Cancel</button>
               <button
                 className="btn btn-primary"
                 disabled={!waitHoldReason.trim()}
@@ -574,15 +517,11 @@ export default function DashboardPage() {
             >
               <option value="">— Select user —</option>
               {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.full_name || u.email}
-                </option>
+                <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
               ))}
             </select>
             <div className="modal-actions">
-              <button className="btn btn-ghost" onClick={() => setAssignModal(null)}>
-                Cancel
-              </button>
+              <button className="btn btn-ghost" onClick={() => setAssignModal(null)}>Cancel</button>
               <button
                 className="btn btn-primary"
                 disabled={!assignModalUser}
