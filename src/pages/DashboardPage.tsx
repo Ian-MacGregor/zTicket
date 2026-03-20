@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
@@ -72,6 +72,9 @@ export default function DashboardPage() {
 
   // ── Refresh key — incremented by polling and status changes ─
   const [fetchKey, setFetchKey] = useState(0);
+  // When true, the next fetch triggered by fetchKey is a silent background
+  // refresh — skip the skeleton loader so the UI doesn't flash.
+  const isBackgroundRef = useRef(false);
 
   // ── Debounce search (400 ms) — also resets page ──────────
   useEffect(() => {
@@ -84,7 +87,9 @@ export default function DashboardPage() {
 
   // ── Main fetch: tickets (server-side filtered/sorted/paginated) ─
   useEffect(() => {
-    setLoading(true);
+    const background = isBackgroundRef.current;
+    isBackgroundRef.current = false;
+    if (!background) setLoading(true);
     api
       .listTickets({
         page, limit, sort: sortBy,
@@ -107,6 +112,7 @@ export default function DashboardPage() {
     api.listUsers().then(setUsers).catch(console.error);
 
     const interval = setInterval(() => {
+      isBackgroundRef.current = true;
       setFetchKey((k) => k + 1);
       api.getTicketStats().then(setStats).catch(console.error);
     }, 30000);
@@ -147,7 +153,8 @@ export default function DashboardPage() {
       if (newStatus === "unassigned") body.assigned_to = null;
       if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
       await api.updateTicket(ticketId, body);
-      // Refetch current page and global stats
+      // Refetch current page and global stats (silently — no skeleton flash)
+      isBackgroundRef.current = true;
       setFetchKey((k) => k + 1);
       api.getTicketStats().then(setStats).catch(console.error);
     } catch (err) {
