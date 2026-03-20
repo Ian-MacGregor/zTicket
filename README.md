@@ -24,7 +24,8 @@ Email and password authentication powered by Supabase. Only email addresses adde
 ### Dashboard (`/`)
 The main view showing all tickets across the company. Features include:
 
-- **Stat cards** — global counts for total, unassigned, wait/hold, assigned, review, and done. Counts always reflect the whole database regardless of active filters. Clicking a status card filters the list; clicking "total" resets all filters. The active filter card is highlighted.
+- **Activity feed** — a subtle bar between the title bar and the stat cards showing the 5 most recent ticket events (e.g. "#123 Taylor set status to "Review" · 5m ago"). Refreshes every 30 seconds and immediately after any status change.
+- **Stat cards** — clickable filter cards showing global ticket counts. Cards: Active (assigned + review combined), Unassigned, Wait/Hold, Assigned, Review, Done, Total. Counts always reflect the whole database regardless of active filters. Clicking a card filters the list to that status; clicking "Total" resets all filters. The active filter card is highlighted. **Active is the default filter** when the page loads.
 - **Pagination** — tickets are loaded 10 per page by default (configurable to 25, 50, or 100). All filtering, sorting, and searching is performed server-side so sort order and result counts are accurate across the full dataset.
 - **Filters** — priority and client dropdowns. Status filtering via stat card clicks.
 - **Search** — joined type selector + text input. Search types: description, ticket #, client, assignee, reviewer, date created, date updated. Search is debounced and runs server-side.
@@ -32,13 +33,15 @@ The main view showing all tickets across the company. Features include:
 - **My Tickets / My Reviews** — quick-filter buttons that show tickets assigned to or awaiting review by the current user.
 - **Inline status changes** — the status dropdown on each ticket row updates the ticket immediately without leaving the dashboard. Changing to "assigned" from "unassigned" opens a user-picker modal; changing to "wait/hold" prompts for a reason.
 - **Visual highlights** — tickets assigned to the current user get a colored outline matching the "assigned" status color. Tickets awaiting the current user's review get an outline matching the "review" status color.
-- **Skeleton loading** — stat cards and ticket rows show animated placeholders while data loads.
-- **Auto-refresh** — ticket list and stat cards refresh automatically every 30 seconds.
+- **Skeleton loading** — stat cards and ticket rows show animated placeholders while data loads. The column header row is always visible during loading to prevent visual flicker.
+- **Auto-refresh** — ticket list, stat cards, and activity feed refresh automatically every 30 seconds without a visible flash.
 
 ### Ticket Detail (`/tickets/:id`)
-Full ticket view showing all metadata, file attachments, and Gmail links. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
+Full ticket view showing all metadata, file attachments, Gmail links, and forum-style comments. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
 
-Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), comments, Gmail links, and attached files.
+Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), Gmail links, and attached files.
+
+**Comments** — a full forum-style thread beneath the ticket metadata. Each comment shows the author's name, timestamp, and an "(edited)" marker if it has been updated. Authors see an Edit button on their own comments (RLS enforces this server-side too). An "Add Comment" box is always visible at the bottom of the thread.
 
 ### Create / Edit Ticket (`/tickets/new`, `/tickets/:id/edit`)
 Form for creating or editing tickets. Fields include:
@@ -50,9 +53,9 @@ Form for creating or editing tickets. Fields include:
 - **Quote Required** checkbox — when unchecked (default), the quoted fields are hidden and cleared on save. When checked, the following three fields appear:
   - Quoted time (free text, e.g. "2 weeks" or "40 hours")
   - Quoted price and quoted AMF increase (dollar amounts)
-- Comments (internal notes)
 - Gmail links (add multiple)
 - Wait/hold reason (only shown when status is set to Wait/Hold)
+- **Initial comment** (create mode only) — an optional first comment posted immediately after the ticket is created
 
 ### Clients (`/clients`)
 Manage the client list and their contacts. Each client has a name and a contact list. Contacts have a name, email, phone, and role/title. Clients appear in the ticket form dropdown and as filter options on the dashboard.

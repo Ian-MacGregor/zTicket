@@ -68,6 +68,7 @@
 
 html {
   font-size: 15px;
+  overflow-x: hidden;
 }
 
 body {
@@ -76,6 +77,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a {
@@ -1164,55 +1166,159 @@ a {
 
 /* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* ── Layout containers ── */
+  .dashboard {
+    padding: 0 16px 40px;
+  }
+
+  .form-page,
+  .detail-page {
+    padding: 0 16px 40px;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px 0;
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .topbar-email {
+    display: none;
+  }
+
+  /* ── Stat cards ── */
   .stats-row {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
+  /* ── Action bar ── */
+  .action-bar {
+    flex-wrap: wrap;
   }
 
-  .detail-grid {
-    grid-template-columns: 1fr 1fr;
+  .action-bar-left {
+    flex-wrap: wrap;
   }
 
+  /* ── Filter toolbar ── */
   .toolbar {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
+  /* ── Forms ── */
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* ── Ticket detail metadata grid ── */
+  .detail-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: 16px;
+  }
+
+  .detail-header {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .detail-actions {
+    display: flex;
     gap: 8px;
   }
 
+  /* ── Pagination ── */
+  .pagination-row {
+    gap: 4px;
+  }
+
+  .pagination-center {
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .sort-count {
+    display: none;
+  }
+
+  /* ── Ticket table: card layout on mobile ── */
+  .ticket-table-header {
+    display: none;
+  }
+
   .ticket-row {
-    grid-template-columns: 50px 80px 1fr;
-    grid-template-rows: auto auto;
-    gap: 6px 10px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto auto auto;
+    gap: 4px 8px;
+    padding: 12px 14px;
+    align-items: start;
   }
 
-  .ticket-col-client,
-  .ticket-col-priority,
-  .ticket-col-owner,
-  .ticket-col-files,
+  /* Row 1: ref | (gap) | status */
+  .ticket-col-ref    { grid-column: 1; grid-row: 1; align-self: center; }
+  .ticket-col-status { grid-column: 3; grid-row: 1; align-self: center; }
+
+  /* Row 2: title spans full width */
+  .ticket-col-info   { grid-column: 1 / -1; grid-row: 2; }
+
+  /* Row 3: priority + owner side by side */
+  .ticket-col-priority { grid-column: 1; grid-row: 3; align-self: center; }
+  .ticket-col-owner    { grid-column: 2 / span 2; grid-row: 3; align-self: center; }
+
+  /* Row 4: dates as a horizontal row */
   .ticket-col-dates {
-    grid-column: 3;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
   }
 
-  .ticket-col-dates {
-    align-items: flex-start;
-  }
+  /* Hide on mobile */
+  .ticket-col-client { display: none; }
+  .ticket-col-files  { display: none; }
 }
 
 @media (max-width: 480px) {
+  .dashboard {
+    padding: 0 12px 32px;
+  }
+
+  .form-page,
+  .detail-page {
+    padding: 0 12px 32px;
+  }
+
   .stats-row {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .stat-card {
+    padding: 10px 4px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
   }
 
   .detail-grid {
     grid-template-columns: 1fr;
+    padding: 12px;
   }
 }
 
