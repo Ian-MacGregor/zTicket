@@ -150,6 +150,9 @@ export const api = {
       body: JSON.stringify({ body }),
     }),
 
+  // Activity
+  listActivity: () => request<any[]>("/api/activity"),
+
   // Colors
   getColors: () => request<any>("/api/colors"),
   updateColors: (settings: any) =>

@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const [tickets, setTickets]   = useState<any[]>([]);
   const [total, setTotal]       = useState(0);
   const [stats, setStats]       = useState({ total: 0, unassigned: 0, wait_hold: 0, assigned: 0, review: 0, done: 0 });
+  const [activity, setActivity] = useState<any[]>([]);
   const [clients, setClients]   = useState<{ id: string; name: string }[]>([]);
   const [users, setUsers]       = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -109,6 +110,7 @@ export default function DashboardPage() {
   // ── One-time setup: stats, clients, users, polling ───────
   useEffect(() => {
     api.getTicketStats().then(setStats).catch(console.error);
+    api.listActivity().then(setActivity).catch(console.error);
     api.listClients().then(setClients).catch(console.error);
     api.listUsers().then(setUsers).catch(console.error);
 
@@ -116,6 +118,7 @@ export default function DashboardPage() {
       isBackgroundRef.current = true;
       setFetchKey((k) => k + 1);
       api.getTicketStats().then(setStats).catch(console.error);
+      api.listActivity().then(setActivity).catch(console.error);
     }, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -158,6 +161,7 @@ export default function DashboardPage() {
       isBackgroundRef.current = true;
       setFetchKey((k) => k + 1);
       api.getTicketStats().then(setStats).catch(console.error);
+      api.listActivity().then(setActivity).catch(console.error);
     } catch (err) {
       console.error(err);
     }
@@ -301,6 +305,20 @@ export default function DashboardPage() {
           ))}
         </select>
       </div>
+
+      {/* ── Activity Feed ───────────────────────────── */}
+      {activity.length > 0 && (
+        <div className="activity-strip">
+          <span className="activity-label">Recent</span>
+          {activity.map((a, i) => (
+            <span key={a.id} className="activity-item">
+              {i > 0 && <span className="activity-sep">·</span>}
+              <span className="activity-ref">#{a.ticket?.ref_number}</span>
+              {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* ── Ticket List ─────────────────────────────── */}
       <div className="ticket-table">
