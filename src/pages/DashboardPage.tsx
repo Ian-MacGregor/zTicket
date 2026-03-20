@@ -184,48 +184,43 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* ── Stats Rows (global counts — unaffected by filters) ─ */}
-      {(() => {
-        const activeCount = stats.assigned + stats.review;
-        const row1 = [
-          { key: "active", label: "Active", val: activeCount, color: null },
-          { key: "done",   label: "Done",   val: stats.done,  color: STATUS_COLORS["done"] },
-          { key: "total",  label: "Total",  val: stats.total, color: null },
-        ];
-        const row2 = [
-          { key: "unassigned", label: "Unassigned", val: stats.unassigned, color: STATUS_COLORS["unassigned"] },
-          { key: "wait_hold",  label: "Wait/Hold",  val: stats.wait_hold,  color: STATUS_COLORS["wait_hold"] },
-          { key: "assigned",   label: "Assigned",   val: stats.assigned,   color: STATUS_COLORS["assigned"] },
-          { key: "review",     label: "Review",     val: stats.review,     color: STATUS_COLORS["review"] },
-        ];
-        const renderCard = ({ key, label, val, color }: { key: string; label: string; val: number; color: string | null }) =>
-          loading && tickets.length === 0 ? (
-            <div key={key} className="stat-card">
-              <span className="skeleton skeleton-value" />
-              <span className="stat-label">{label}</span>
-              {color && <span className="stat-dot" style={{ background: color }} />}
-            </div>
-          ) : (
-            <div
-              key={key}
-              className={`stat-card clickable${filterStatus === key ? " stat-card-active" : ""}`}
-              onClick={() => {
-                if (key === "total") resetFilters();
-                else setStatusFilter(filterStatus === key ? "active" : key);
-              }}
-            >
-              <span className="stat-value">{val}</span>
-              <span className="stat-label">{label}</span>
-              {color && <span className="stat-dot" style={{ background: color }} />}
-            </div>
+      {/* ── Stats Row (global counts — unaffected by filters) ─ */}
+      <div className="stats-row">
+        {(() => {
+          const activeCount = stats.assigned + stats.review;
+          const cards = [
+            { key: "active",     label: "Active",     val: activeCount,      color: null },
+            { key: "unassigned", label: "Unassigned", val: stats.unassigned, color: STATUS_COLORS["unassigned"] },
+            { key: "wait_hold",  label: "Wait/Hold",  val: stats.wait_hold,  color: STATUS_COLORS["wait_hold"] },
+            { key: "assigned",   label: "Assigned",   val: stats.assigned,   color: STATUS_COLORS["assigned"] },
+            { key: "review",     label: "Review",     val: stats.review,     color: STATUS_COLORS["review"] },
+            { key: "done",       label: "Done",       val: stats.done,       color: STATUS_COLORS["done"] },
+            { key: "total",      label: "Total",      val: stats.total,      color: null },
+          ];
+          return cards.map(({ key, label, val, color }) =>
+            loading && tickets.length === 0 ? (
+              <div key={key} className="stat-card">
+                <span className="skeleton skeleton-value" />
+                <span className="stat-label">{label}</span>
+                {color && <span className="stat-dot" style={{ background: color }} />}
+              </div>
+            ) : (
+              <div
+                key={key}
+                className={`stat-card clickable${filterStatus === key ? " stat-card-active" : ""}`}
+                onClick={() => {
+                  if (key === "total") resetFilters();
+                  else setStatusFilter(filterStatus === key ? "active" : key);
+                }}
+              >
+                <span className="stat-value">{val}</span>
+                <span className="stat-label">{label}</span>
+                {color && <span className="stat-dot" style={{ background: color }} />}
+              </div>
+            )
           );
-        return (
-          <>
-            <div className="stats-row stats-row-3">{row1.map(renderCard)}</div>
-            <div className="stats-row stats-row-4">{row2.map(renderCard)}</div>
-          </>
-        );
-      })()}
+        })()}
+      </div>
 
       {/* ── Action Bar ──────────────────────────────── */}
       <div className="action-bar">
