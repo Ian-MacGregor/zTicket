@@ -38,6 +38,7 @@ export default function TicketDetailPage() {
   const [assignModalUser, setAssignModalUser] = useState("");
   const [waitHoldModal, setWaitHoldModal] = useState(false);
   const [waitHoldReason, setWaitHoldReason] = useState("");
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   const load = () => {
     if (!id) return;
@@ -56,14 +57,15 @@ export default function TicketDetailPage() {
 
   const handleStatusChange = async (newStatus: string, extra: Record<string, unknown> = {}) => {
     if (!id) return;
+    setStatusError(null);
     try {
       const body: Record<string, unknown> = { status: newStatus, ...extra };
       if (newStatus === "unassigned") body.assigned_to = null;
       if (newStatus !== "wait_hold") body.wait_hold_reason = null;
       const updated = await api.updateTicket(id, body);
       setTicket((prev: any) => ({ ...prev, ...updated }));
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setStatusError(err.message || "Failed to update status.");
     }
   };
 
@@ -135,6 +137,7 @@ export default function TicketDetailPage() {
           style={{ background: STATUS_COLORS[ticket.status], color: "#0e0f11" }}
           onChange={(e) => {
             const newStatus = e.target.value;
+            setStatusError(null);
             if (ticket.status === "unassigned" && newStatus === "assigned") {
               setAssignModalUser("");
               setAssignModal({ pendingStatus: newStatus });
@@ -151,6 +154,8 @@ export default function TicketDetailPage() {
           ))}
         </select>
       </div>
+
+      {statusError && <div className="alert alert-error">{statusError}</div>}
 
       {ticket.description && (
         <p className="detail-description">{ticket.description}</p>
