@@ -182,6 +182,20 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
+      {/* ── Top Bar ─────────────────────────────────── */}
+      <header className="topbar">
+        <div className="topbar-left">
+          <span className="topbar-logo">⬡</span>
+          <h1>zTicket</h1>
+        </div>
+        <div className="topbar-right">
+          <span className="topbar-email">{user?.email}</span>
+          <Link to="/colors" className="btn btn-ghost">Colors</Link>
+          <Link to="/clients" className="btn btn-ghost">Clients</Link>
+          <button className="btn btn-ghost" onClick={signOut}>Sign out</button>
+        </div>
+      </header>
+
       {/* ── Activity Strip ──────────────────────────── */}
       {activity.length > 0 && (
         <div className="activity-strip">
@@ -196,20 +210,6 @@ export default function DashboardPage() {
           ))}
         </div>
       )}
-
-      {/* ── Top Bar ─────────────────────────────────── */}
-      <header className="topbar">
-        <div className="topbar-left">
-          <span className="topbar-logo">⬡</span>
-          <h1>zTicket</h1>
-        </div>
-        <div className="topbar-right">
-          <span className="topbar-email">{user?.email}</span>
-          <Link to="/colors" className="btn btn-ghost">Colors</Link>
-          <Link to="/clients" className="btn btn-ghost">Clients</Link>
-          <button className="btn btn-ghost" onClick={signOut}>Sign out</button>
-        </div>
-      </header>
 
       {/* ── Stats Row (global counts — unaffected by filters) ─ */}
       <div className="stats-row">
