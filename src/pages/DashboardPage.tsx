@@ -290,40 +290,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Ticket List ─────────────────────────────── */}
-      {loading ? (
-        <div className="ticket-table">
-          <div className="ticket-table-header ticket-row">
-            <div className="ticket-col-ref">#</div>
-            <div className="ticket-col-status">Status</div>
-            <div className="ticket-col-info">Description</div>
-            <div className="ticket-col-client">Client</div>
-            <div className="ticket-col-priority">Priority</div>
-            <div className="ticket-col-owner">Owner</div>
-            <div className="ticket-col-files" />
-            <div className="ticket-col-dates">Dates</div>
-          </div>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="ticket-row ticket-row-skeleton">
-              <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
-              <div className="ticket-col-status"><span className="skeleton skeleton-badge" /></div>
-              <div className="ticket-col-info">
-                <span className="skeleton skeleton-title" />
-                <span className="skeleton skeleton-meta" />
-              </div>
-              <div className="ticket-col-client"><span className="skeleton skeleton-meta" /></div>
-              <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
-              <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
-              <div className="ticket-col-files" />
-              <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
-            </div>
-          ))}
-        </div>
-      ) : tickets.length === 0 ? (
-        <div className="empty-state">
-          <p>No tickets match your filters.</p>
-        </div>
-      ) : (
-        <div className="ticket-table">
+      <div className="ticket-table">
           <div className="ticket-table-header ticket-row">
             <div className="ticket-col-ref sort-col" onClick={() => handleColSort("ref", "desc")}>
               #{sortArrow("ref")}
@@ -348,6 +315,27 @@ export default function DashboardPage() {
               Dates{sortArrow("updated")}
             </div>
           </div>
+
+      {loading ? (
+          <>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="ticket-row ticket-row-skeleton">
+              <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
+              <div className="ticket-col-status"><span className="skeleton skeleton-badge" /></div>
+              <div className="ticket-col-info">
+                <span className="skeleton skeleton-title" />
+                <span className="skeleton skeleton-meta" />
+              </div>
+              <div className="ticket-col-client"><span className="skeleton skeleton-meta" /></div>
+              <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
+              <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
+              <div className="ticket-col-files" />
+              <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
+            </div>
+          ))}
+          </>
+      ) : tickets.length === 0 ? null : (
+          <>
 
           {tickets.map((t) => {
             const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
@@ -443,6 +431,13 @@ export default function DashboardPage() {
               </div>
             );
           })}
+        </>
+      )}
+      </div>
+
+      {!loading && tickets.length === 0 && (
+        <div className="empty-state">
+          <p>No tickets match your filters.</p>
         </div>
       )}
 
