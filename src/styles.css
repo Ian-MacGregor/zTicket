@@ -414,7 +414,7 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   flex-wrap: wrap;
 }
 
@@ -478,28 +478,51 @@ a {
   border-color: var(--accent);
 }
 
-/* Sort Bar */
-.sort-bar {
+/* Action Bar */
+.action-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.sort-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-  white-space: nowrap;
+.action-bar-left {
+  display: flex;
+  gap: 8px;
 }
 
 .sort-count {
-  margin-left: auto;
   font-size: 0.8rem;
   color: var(--text-muted);
   font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Ticket Table Header */
+.ticket-table-header {
+  background: var(--bg-elevated) !important;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+}
+
+.ticket-table-header:hover {
+  background: var(--bg-elevated) !important;
+}
+
+.sort-col {
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.sort-col:hover {
+  color: var(--text-primary);
 }
 
 /* Ticket Table — column-aligned grid */

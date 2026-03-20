@@ -161,6 +161,24 @@ export default function DashboardPage() {
           return (a.client?.name || "zzz").localeCompare(b.client?.name || "zzz");
         case "client-desc":
           return (b.client?.name || "").localeCompare(a.client?.name || "");
+        case "title-asc":
+          return a.title.localeCompare(b.title);
+        case "title-desc":
+          return b.title.localeCompare(a.title);
+        case "owner-asc": {
+          const aOwner = a.status === "review" ? (a.reviewer?.full_name || "") : (a.assignee?.full_name || "");
+          const bOwner = b.status === "review" ? (b.reviewer?.full_name || "") : (b.assignee?.full_name || "");
+          return aOwner.localeCompare(bOwner);
+        }
+        case "owner-desc": {
+          const aOwner = a.status === "review" ? (a.reviewer?.full_name || "") : (a.assignee?.full_name || "");
+          const bOwner = b.status === "review" ? (b.reviewer?.full_name || "") : (b.assignee?.full_name || "");
+          return bOwner.localeCompare(aOwner);
+        }
+        case "created-asc":
+          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+        case "created-desc":
+          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
         default:
           return 0;
       }
@@ -174,6 +192,17 @@ export default function DashboardPage() {
     review: tickets.filter((t) => t.status === "review").length,
     done: tickets.filter((t) => t.status === "done").length,
   };
+
+  const [sortCol, sortDir] = sortBy.split("-") as [string, "asc" | "desc"];
+  const handleColSort = (col: string, defaultDir: "asc" | "desc" = "desc") => {
+    if (sortCol === col) {
+      setSortBy(`${col}-${sortDir === "asc" ? "desc" : "asc"}`);
+    } else {
+      setSortBy(`${col}-${defaultDir}`);
+    }
+  };
+  const sortArrow = (col: string) =>
+    sortCol === col ? (sortDir === "asc" ? " ↑" : " ↓") : null;
 
   const handleStatusChange = async (ticketId: string, newStatus: string, extra: Record<string, unknown> = {}) => {
     try {
@@ -250,7 +279,30 @@ export default function DashboardPage() {
             ))}
       </div>
 
-      {/* ── Toolbar ─────────────────────────────────── */}
+      {/* ── Action Bar ──────────────────────────────── */}
+      <div className="action-bar">
+        <div className="action-bar-left">
+          <button
+            className={`btn ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setFilterView(filterView === "my-tickets" ? "all" : "my-tickets")}
+            disabled={loading}
+          >
+            My Tickets
+          </button>
+          <button
+            className={`btn ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
+            onClick={() => setFilterView(filterView === "my-reviews" ? "all" : "my-reviews")}
+            disabled={loading}
+          >
+            My Reviews
+          </button>
+        </div>
+        <Link to="/tickets/new" className="btn btn-primary">
+          + New Ticket
+        </Link>
+      </div>
+
+      {/* ── Filter Bar ──────────────────────────────── */}
       <div className="toolbar">
         <div className="search-group">
           <select
@@ -309,61 +361,22 @@ export default function DashboardPage() {
             </option>
           ))}
         </select>
-        <Link to="/tickets/new" className="btn btn-primary">
-          + New Ticket
-        </Link>
-      </div>
-
-      {/* ── Sort Bar ────────────────────────────────── */}
-      <div className="sort-bar">
-        <span className="sort-label">Sort by</span>
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
-          className="filter-select"
-          disabled={loading}
-        >
-          <optgroup label="Ticket #">
-            <option value="ref-desc">Ticket # (newest first)</option>
-            <option value="ref-asc">Ticket # (oldest first)</option>
-          </optgroup>
-          <optgroup label="Priority">
-            <option value="priority-desc">Priority (high → low)</option>
-            <option value="priority-asc">Priority (low → high)</option>
-          </optgroup>
-          <optgroup label="Updated Date">
-            <option value="updated-desc">Updated (newest first)</option>
-            <option value="updated-asc">Updated (oldest first)</option>
-          </optgroup>
-          <optgroup label="Status">
-            <option value="status-asc">Status (unassigned → done)</option>
-            <option value="status-desc">Status (done → unassigned)</option>
-          </optgroup>
-          <optgroup label="Client">
-            <option value="client-asc">Client (A → Z)</option>
-            <option value="client-desc">Client (Z → A)</option>
-          </optgroup>
-        </select>
-        <button
-          className={`btn ${filterView === "my-tickets" ? "btn-primary" : "btn-secondary"}`}
-          onClick={() => setFilterView(filterView === "my-tickets" ? "all" : "my-tickets")}
-          disabled={loading}
-        >
-          My Tickets
-        </button>
-        <button
-          className={`btn ${filterView === "my-reviews" ? "btn-primary" : "btn-secondary"}`}
-          onClick={() => setFilterView(filterView === "my-reviews" ? "all" : "my-reviews")}
-          disabled={loading}
-        >
-          My Reviews
-        </button>
         <span className="sort-count">{filtered.length} ticket{filtered.length !== 1 ? "s" : ""}</span>
       </div>
 
       {/* ── Ticket List ─────────────────────────────── */}
       {loading ? (
         <div className="ticket-table">
+          <div className="ticket-table-header ticket-row">
+            <div className="ticket-col-ref">#</div>
+            <div className="ticket-col-status">Status</div>
+            <div className="ticket-col-info">Description</div>
+            <div className="ticket-col-client">Client</div>
+            <div className="ticket-col-priority">Priority</div>
+            <div className="ticket-col-owner">Owner</div>
+            <div className="ticket-col-files" />
+            <div className="ticket-col-dates">Dates</div>
+          </div>
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="ticket-row ticket-row-skeleton">
               <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
@@ -386,6 +399,30 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="ticket-table">
+          <div className="ticket-table-header ticket-row">
+            <div className="ticket-col-ref sort-col" onClick={() => handleColSort("ref", "desc")}>
+              #{sortArrow("ref")}
+            </div>
+            <div className="ticket-col-status sort-col" onClick={() => handleColSort("status", "asc")}>
+              Status{sortArrow("status")}
+            </div>
+            <div className="ticket-col-info sort-col" onClick={() => handleColSort("title", "asc")}>
+              Description{sortArrow("title")}
+            </div>
+            <div className="ticket-col-client sort-col" onClick={() => handleColSort("client", "asc")}>
+              Client{sortArrow("client")}
+            </div>
+            <div className="ticket-col-priority sort-col" onClick={() => handleColSort("priority", "desc")}>
+              Priority{sortArrow("priority")}
+            </div>
+            <div className="ticket-col-owner sort-col" onClick={() => handleColSort("owner", "asc")}>
+              Owner{sortArrow("owner")}
+            </div>
+            <div className="ticket-col-files" />
+            <div className="ticket-col-dates sort-col" onClick={() => handleColSort("updated", "desc")}>
+              Dates{sortArrow("updated")}
+            </div>
+          </div>
           {filtered.map((t) => {
             const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
             const isMyReview = t.status === "review" && t.reviewer?.id === user?.id;
