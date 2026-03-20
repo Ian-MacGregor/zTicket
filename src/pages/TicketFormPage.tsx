@@ -193,8 +193,7 @@ export default function TicketFormPage() {
                 <option value="wait_hold">Wait/Hold</option>
                 <option value="assigned">Assigned</option>
                 <option value="review">Review</option>
-                <option value="complete">Complete</option>
-                <option value="sent">Sent</option>
+                <option value="done">Done</option>
               </select>
             </div>
           )}

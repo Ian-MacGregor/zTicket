@@ -15,13 +15,13 @@ export interface ColorSettings {
   background: string;
   text1: string;
   text2: string;
+  buttonPrimary: string;
   // Statuses
   statusUnassigned: string;
   statusWaitHold: string;
   statusAssigned: string;
   statusReview: string;
-  statusComplete: string;
-  statusSent: string;
+  statusDone: string;
   // Priorities
   priorityCritical: string;
   priorityHigh: string;
@@ -34,12 +34,12 @@ export const DEFAULT_COLORS: ColorSettings = {
   background: "#0e0f11",
   text1: "#e8eaed",
   text2: "#8b8f98",
+  buttonPrimary: "#d4a853",
   statusUnassigned: "#6b7280",
   statusWaitHold: "#a855f7",
   statusAssigned: "#5b8def",
   statusReview: "#d4a853",
-  statusComplete: "#4ecb71",
-  statusSent: "#8b8f98",
+  statusDone: "#4ecb71",
   priorityCritical: "#ef4444",
   priorityHigh: "#f59e0b",
   priorityMedium: "#5b8def",
@@ -78,8 +78,9 @@ function applyColors(c: ColorSettings) {
   root.style.setProperty("--status-wait-hold", c.statusWaitHold);
   root.style.setProperty("--status-assigned", c.statusAssigned);
   root.style.setProperty("--status-review", c.statusReview);
-  root.style.setProperty("--status-complete", c.statusComplete);
-  root.style.setProperty("--status-sent", c.statusSent);
+  root.style.setProperty("--status-done", c.statusDone);
+  root.style.setProperty("--btn-primary", c.buttonPrimary);
+  root.style.setProperty("--btn-primary-hover", lighten(c.buttonPrimary, 0.1));
 
   root.style.setProperty("--priority-critical", c.priorityCritical);
   root.style.setProperty("--priority-high", c.priorityHigh);

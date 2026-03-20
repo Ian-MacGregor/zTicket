@@ -21,13 +21,16 @@
   --accent-hover: #e0b96a;
   --accent-muted: rgba(212, 168, 83, 0.12);
 
+  /* Action button */
+  --btn-primary: #d4a853;
+  --btn-primary-hover: #e0b96a;
+
   /* Status */
   --status-unassigned: #6b7280;
   --status-wait-hold: #a855f7;
   --status-assigned: #5b8def;
   --status-review: #d4a853;
-  --status-complete: #4ecb71;
-  --status-sent: #8b8f98;
+  --status-done: #4ecb71;
 
   /* Priority */
   --priority-critical: #ef4444;
@@ -102,12 +105,12 @@ a {
 }
 
 .btn-primary {
-  background: var(--accent);
+  background: var(--btn-primary);
   color: #0e0f11;
-  border-color: var(--accent);
+  border-color: var(--btn-primary);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+  background: var(--btn-primary-hover);
 }
 
 .btn-secondary {
@@ -357,7 +360,7 @@ a {
 /* Stats */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 12px;
   margin-bottom: 24px;
 }

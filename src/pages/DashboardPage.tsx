@@ -8,8 +8,7 @@ const STATUS_COLORS: Record<string, string> = {
   wait_hold: "var(--status-wait-hold)",
   assigned: "var(--status-assigned)",
   review: "var(--status-review)",
-  complete: "var(--status-complete)",
-  sent: "var(--status-sent)",
+  done: "var(--status-done)",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -17,11 +16,10 @@ const STATUS_LABELS: Record<string, string> = {
   wait_hold: "wait/hold",
   assigned: "assigned",
   review: "review",
-  complete: "complete",
-  sent: "sent",
+  done: "done",
 };
 
-const STATUSES = ["unassigned", "wait_hold", "assigned", "review", "complete", "sent"];
+const STATUSES = ["unassigned", "wait_hold", "assigned", "review", "done"];
 
 const PRIORITY_LABELS: Record<string, string> = {
   critical: "⬤ Critical",
@@ -95,7 +93,7 @@ export default function DashboardPage() {
   };
 
   const STATUS_ORDER: Record<string, number> = {
-    unassigned: 0, wait_hold: 1, assigned: 2, review: 3, complete: 4, sent: 5,
+    unassigned: 0, wait_hold: 1, assigned: 2, review: 3, done: 4,
   };
 
   const filtered = tickets
@@ -105,11 +103,11 @@ export default function DashboardPage() {
       if (filterClient !== "all" && t.client?.id !== filterClient) return false;
       if (filterView === "my-tickets") {
         if (t.assignee?.id !== user?.id) return false;
-        if (!["wait_hold", "assigned", "review", "complete"].includes(t.status)) return false;
+        if (!["wait_hold", "assigned", "review"].includes(t.status)) return false;
       }
       if (filterView === "my-reviews") {
         if (t.reviewer?.id !== user?.id) return false;
-        if (!["review", "complete"].includes(t.status)) return false;
+        if (!["review"].includes(t.status)) return false;
       }
       if (
         search &&
@@ -152,8 +150,7 @@ export default function DashboardPage() {
     wait_hold: tickets.filter((t) => t.status === "wait_hold").length,
     assigned: tickets.filter((t) => t.status === "assigned").length,
     review: tickets.filter((t) => t.status === "review").length,
-    complete: tickets.filter((t) => t.status === "complete").length,
-    sent: tickets.filter((t) => t.status === "sent").length,
+    done: tickets.filter((t) => t.status === "done").length,
   };
 
   const handleStatusChange = async (ticketId: string, newStatus: string, extra: Record<string, unknown> = {}) => {
@@ -195,7 +192,7 @@ export default function DashboardPage() {
       {/* ── Stats Row ───────────────────────────────── */}
       <div className="stats-row">
         {loading
-          ? ["total", "unassigned", "wait_hold", "assigned", "review", "complete", "sent"].map((key) => (
+          ? ["total", "unassigned", "wait_hold", "assigned", "review", "done"].map((key) => (
               <div key={key} className="stat-card">
                 <span className="skeleton skeleton-value" />
                 <span className="stat-label">{key}</span>
@@ -264,8 +261,7 @@ export default function DashboardPage() {
           <option value="wait_hold">Wait/Hold</option>
           <option value="assigned">Assigned</option>
           <option value="review">Review</option>
-          <option value="complete">Complete</option>
-          <option value="sent">Sent</option>
+          <option value="done">Done</option>
         </select>
         <select
           value={filterClient}
@@ -307,8 +303,8 @@ export default function DashboardPage() {
             <option value="updated-asc">Updated (oldest first)</option>
           </optgroup>
           <optgroup label="Status">
-            <option value="status-asc">Status (assigned → sent)</option>
-            <option value="status-desc">Status (sent → assigned)</option>
+            <option value="status-asc">Status (unassigned → done)</option>
+            <option value="status-desc">Status (done → unassigned)</option>
           </optgroup>
           <optgroup label="Client">
             <option value="client-asc">Client (A → Z)</option>

@@ -15,6 +15,7 @@ const SECTIONS: { title: string; fields: ColorFieldDef[] }[] = [
       { key: "background", label: "Background" },
       { key: "text1", label: "Text 1 (primary)" },
       { key: "text2", label: "Text 2 (secondary)" },
+      { key: "buttonPrimary", label: "Action Button" },
     ],
   },
   {
@@ -24,8 +25,7 @@ const SECTIONS: { title: string; fields: ColorFieldDef[] }[] = [
       { key: "statusWaitHold", label: "Wait/Hold" },
       { key: "statusAssigned", label: "Assigned" },
       { key: "statusReview", label: "Review" },
-      { key: "statusComplete", label: "Complete" },
-      { key: "statusSent", label: "Sent" },
+      { key: "statusDone", label: "Done" },
     ],
   },
   {

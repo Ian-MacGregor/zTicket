@@ -7,8 +7,7 @@ const STATUS_COLORS: Record<string, string> = {
   wait_hold: "var(--status-wait-hold)",
   assigned: "var(--status-assigned)",
   review: "var(--status-review)",
-  complete: "var(--status-complete)",
-  sent: "var(--status-sent)",
+  done: "var(--status-done)",
 };
 
 function formatDateTime(dateStr: string | null): string {
@@ -152,15 +151,9 @@ export default function TicketDetailPage() {
           </span>
         </div>
         <div className="detail-field">
-          <span className="field-label">Date Completed</span>
+          <span className="field-label">Date Done</span>
           <span className="field-value">
             {formatDateTime(ticket.date_completed)}
-          </span>
-        </div>
-        <div className="detail-field">
-          <span className="field-label">Date Sent</span>
-          <span className="field-value">
-            {formatDateTime(ticket.date_sent)}
           </span>
         </div>
         <div className="detail-field">
