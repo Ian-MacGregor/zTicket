@@ -5,13 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>zTicket</title>
     <link rel="icon" type="image/svg+xml" href="/zTicket/favicon.svg" />
+    <script>
+      // Decode path encoded by 404.html SPA redirect hack.
+      // 404.html converts /some/path?q=v to /?/some/path&q=v so GitHub Pages
+      // serves index.html. This script restores the original path before React loads.
+      (function () {
+        var l = window.location;
+        if (l.search[1] === "/") {
+          var parts = l.search.slice(1).split("&");
+          var path = parts[0];
+          var rest = parts.slice(1).map(function (s) { return s.replace(/~and~/g, "&"); }).join("&");
+          window.history.replaceState(
+            null, null,
+            l.pathname.slice(0, -1) + path + (rest ? "?" + rest : "") + l.hash
+          );
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <script type="module" crossorigin src="/zTicket/assets/index-BlTBFqHl.js"></script>
+    <script type="module" crossorigin src="/zTicket/assets/index-fVNCTC0m.js"></script>
     <link rel="stylesheet" crossorigin href="/zTicket/assets/index-IYYTKHwk.css">
   </head>
   <body>
