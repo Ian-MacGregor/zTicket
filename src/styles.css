@@ -299,9 +299,10 @@ a {
 }
 
 .login-logo {
-  font-size: 2.4rem;
-  color: var(--accent);
+  color: var(--btn-primary);
   margin-bottom: 8px;
+  display: flex;
+  justify-content: center;
 }
 
 .login-header h1 {
@@ -358,8 +359,8 @@ a {
 }
 
 .topbar-logo {
-  font-size: 1.6rem;
-  color: var(--accent);
+  color: var(--btn-primary);
+  flex-shrink: 0;
 }
 
 .topbar-left h1 {
@@ -407,7 +408,7 @@ a {
 }
 
 .stat-card-active {
-  border-color: var(--accent) !important;
+  border-color: var(--btn-primary) !important;
 }
 
 .stat-value {

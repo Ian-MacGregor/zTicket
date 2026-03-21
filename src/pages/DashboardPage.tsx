@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
+import TicketIcon from "../components/TicketIcon";
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
@@ -185,7 +186,7 @@ export default function DashboardPage() {
       {/* ── Top Bar ─────────────────────────────────── */}
       <header className="topbar">
         <div className="topbar-left">
-          <span className="topbar-logo">⬡</span>
+          <TicketIcon size={26} className="topbar-logo" />
           <h1>zTicket</h1>
         </div>
         <div className="topbar-right">

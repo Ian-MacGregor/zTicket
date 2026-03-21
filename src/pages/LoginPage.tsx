@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import TicketIcon from "../components/TicketIcon";
 
 export default function LoginPage() {
   const { signIn, signUp } = useAuth();
@@ -32,7 +33,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo">⬡</div>
+          <div className="login-logo"><TicketIcon size={40} /></div>
           <h1>zTicket</h1>
           <p>{isRegister ? "Create your account" : "Sign in to continue"}</p>
         </div>
