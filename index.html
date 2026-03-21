@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>zTicket</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script>
+      // Decode path encoded by 404.html SPA redirect hack.
+      // 404.html converts /some/path?q=v to /?/some/path&q=v so GitHub Pages
+      // serves index.html. This script restores the original path before React loads.
+      (function () {
+        var l = window.location;
+        if (l.search[1] === "/") {
+          var parts = l.search.slice(1).split("&");
+          var path = parts[0];
+          var rest = parts.slice(1).map(function (s) { return s.replace(/~and~/g, "&"); }).join("&");
+          window.history.replaceState(
+            null, null,
+            l.pathname.slice(0, -1) + path + (rest ? "?" + rest : "") + l.hash
+          );
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

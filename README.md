@@ -4,7 +4,7 @@ zTicket is an internal ticketing system developed for software engineers but it 
 
 This application is designed to be hosted in as efficient a manner as possible for the average developer/home user. Specifically, the frontend is hosted free on GitHub's Pages, the API is hosted on Railway ($5 a month after the first free month), and the database is hosted on Supabase (free with usage limits).  Each of these hosts offer easy scaling and migration.
 
-The repo for the backend of this application is here: https://github.com/Ian-MacGregor/zTicket-api
+The repo for the backend of this application (the API module and the SQL for the database module) is here: https://github.com/Ian-MacGregor/zTicket-api
 
 ---
 
