@@ -1,6 +1,8 @@
 # zTicket — Frontend
 
-Internal ticketing system for managing development tasks, client work, and code reviews. Built with React, Vite, and Supabase Auth. Deployed to GitHub Pages.
+zTicket is an internal ticketing system developed for software engineers but it could apply to other industries as well. zTicket is modular and "self hosted" (to a degree; see below). This repo contains the code required to build the first of the three modules that makeup zTicket, the frontend. The frontend for zTicket (this repo) is built with React, Vite, and Supabase Auth and is deployed to GitHub Pages. This frontend module interacts with a small API server (the API is built using the Hono web framework -- a Node.js runtime enviornment deployed via Docker container; repo link below) which controls interactions with the application's PostgreSQL database (the third module; the SQL used to build this DB is in the backend repo linked below). 
+
+This application is designed to be hosted in as efficient a manner as possible for the average developer/home user. Specifically, the frontend is hosted free on GitHub's Pages, the API is hosted on Railway ($5 a month after the first free month), and the database is hosted on Supabase (free with usage limits).  Each of these hosts offer easy scaling and migration.
 
 The repo for the backend of this application is here: https://github.com/Ian-MacGregor/zTicket-api
 
@@ -63,8 +65,8 @@ Manage the client list and their contacts. Each client has a name and a contact 
 ### Colors (`/colors`)
 Per-user color customization with three categories:
 
-- **Foreground / Background** — controls the card color, page background, and two text shades across the entire app.
-- **Statuses** — sets the color for each status badge (unassigned, wait/hold, assigned, review, done), the stat card indicators, and the ticket highlight outlines.
+- **Foreground / Background** — controls the card color, page background, button color, and two text shades across the entire app.
+- **Statuses** — sets the color for each status badge (unassigned, wait/hold, assigned, review, done), the stat card indicators, and the ticket highlight outlines (for assigned and review statuses only).
 - **Priorities** — sets the color for each priority label (critical, high, medium, low).
 
 Each color can be set via a native color wheel or by entering a hex (`#RRGGBB`) or ARGB (`FFRRGGBB`) code. A live preview shows two mock ticket rows using the draft colors before saving. Color settings are per-user and persist across sessions.
@@ -79,11 +81,14 @@ zTicket/
 │   └── workflows/
 │       └── deploy.yml        # Auto build + deploy on push to master
 ├── public/
-│   └── 404.html              # SPA redirect for GitHub Pages
+│   ├── 404.html              # SPA redirect for GitHub Pages
+│   └── favicon.svg           # Browser tab icon (ticket shape with "z"; hardcoded gold — static files can't use CSS variables)
 ├── src/
 │   ├── App.tsx                # Router, auth guard, providers
 │   ├── main.tsx               # React entry point
 │   ├── styles.css             # All application styles
+│   ├── components/
+│   │   └── TicketIcon.tsx     # Reusable SVG ticket icon (stroke="currentColor", responds to user's button color)
 │   ├── hooks/
 │   │   ├── useAuth.tsx        # Auth context (Supabase session)
 │   │   └── useColors.tsx      # Color settings context (CSS variables)
@@ -101,7 +106,7 @@ zTicket/
 ├── vite.config.ts
 ├── tsconfig.json
 ├── package.json
-└── .env.example
+└── .env                       # Enviornment variables (not to be committed, just for local testing)
 ```
 
 ---
@@ -178,3 +183,5 @@ Colors are managed through CSS custom properties on `:root`. The `useColors` con
 4. Every component that uses `var(--bg-card)`, `var(--status-assigned)`, etc. automatically picks up changes with no per-component logic.
 
 Default theme is a dark industrial-minimal palette with warm gold accents.
+
+The `TicketIcon` SVG component (used in the login page header and dashboard topbar) uses `stroke="currentColor"`, so it automatically picks up the user's configured button color via CSS. The `public/favicon.svg` browser tab icon uses the same ticket shape but with a hardcoded default color since static files cannot access CSS variables.
