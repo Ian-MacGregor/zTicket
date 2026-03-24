@@ -12,6 +12,7 @@ import TicketFormPage from "./pages/TicketFormPage";
 import TicketDetailPage from "./pages/TicketDetailPage";
 import ClientsPage from "./pages/ClientsPage";
 import ColorsPage from "./pages/ColorsPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -76,6 +77,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ColorsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />

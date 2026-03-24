@@ -215,6 +215,7 @@ export default function DashboardPage() {
           <span className="topbar-email">{user?.email}</span>
           <Link to="/colors" className="btn btn-ghost">Colors</Link>
           <Link to="/clients" className="btn btn-ghost">Clients</Link>
+          <Link to="/settings" className="btn btn-ghost">Settings</Link>
           <button className="btn btn-ghost" onClick={signOut}>Sign out</button>
         </div>
       </header>

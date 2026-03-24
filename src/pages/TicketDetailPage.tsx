@@ -33,6 +33,7 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [me, setMe] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [assignModal, setAssignModal] = useState<{ pendingStatus: string } | null>(null);
@@ -80,7 +81,7 @@ export default function TicketDetailPage() {
     loadComments();
     loadEmails();
     api.listUsers().then(setUsers).catch(console.error);
-    api.getMe().then((me) => setCurrentUserId(me.id)).catch(console.error);
+    api.getMe().then((m) => { setMe(m); setCurrentUserId(m.id); }).catch(console.error);
   }, [id]);
 
   const handleAddComment = async () => {
@@ -452,8 +453,10 @@ export default function TicketDetailPage() {
         <GmailPickerModal
           ticketId={id}
           importedGmailIds={emails.map((e: any) => e.gmail_message_id)}
+          gmailAccount={me?.gmail_account ?? null}
           onClose={() => setGmailPickerOpen(false)}
           onImported={loadEmails}
+          onAccountLinked={(email) => setMe((prev: any) => ({ ...prev, gmail_account: email }))}
         />
       )}
 

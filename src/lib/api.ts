@@ -99,6 +99,12 @@ export const api = {
   // Users
   listUsers: () => request<any[]>("/api/users"),
   getMe: () => request<any>("/api/users/me"),
+  updateMe: (body: any) =>
+    request<any>("/api/users/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
 
   // Clients
   listClients: () => request<any[]>("/api/clients"),

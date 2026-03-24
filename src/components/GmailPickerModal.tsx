@@ -41,9 +41,13 @@ interface ParsedMessage {
 interface Props {
   ticketId: string;
   importedGmailIds: string[];
+  gmailAccount: string | null;   // stored Google account email for this user
   onClose: () => void;
   onImported: () => void;
+  onAccountLinked: (email: string) => void; // called when a new account is first linked
 }
+
+const SESSION_TOKEN_KEY = "zticket_gmail_token";
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -137,7 +141,9 @@ function loadGIS(): Promise<void> {
 
 // ── Component ───────────────────────────────────────────────
 
-export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, onImported }: Props) {
+export default function GmailPickerModal({
+  ticketId, importedGmailIds, gmailAccount, onClose, onImported, onAccountLinked,
+}: Props) {
   const clientId = (import.meta as any).env.VITE_GOOGLE_CLIENT_ID as string;
 
   const [token, setToken]               = useState<string | null>(null);
@@ -149,46 +155,64 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
   const [importing, setImporting]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
-  // Pagination: prevTokens holds the page tokens for pages we've already visited,
-  // so we can go backwards. currentToken is what was used to fetch the current page.
-  // nextPageToken is what the API returned for the page after this one.
   const [prevTokens, setPrevTokens]       = useState<(string | null)[]>([]);
   const [currentToken, setCurrentToken]   = useState<string | null>(null);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const pageNumber = prevTokens.length + 1;
 
-  const tokenClientRef  = useRef<any>(null);
-  const debounceRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeQueryRef  = useRef(""); // tracks the query in effect for the current page set
+  const tokenClientRef = useRef<any>(null);
+  const debounceRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeQueryRef = useRef("");
 
-  // Initialise the GIS token client once the script has loaded
+  function buildTokenClient(hint: string | null) {
+    tokenClientRef.current = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      // If we already know the account, skip the picker and skip re-prompting consent
+      ...(hint ? { hint, prompt: "" } : {}),
+      callback: async (resp: any) => {
+        setConnecting(false);
+        if (resp.error) {
+          setError(`Google sign-in failed: ${resp.error}`);
+          return;
+        }
+        const accessToken = resp.access_token;
+        sessionStorage.setItem(SESSION_TOKEN_KEY, accessToken);
+        // Fetch the signed-in email and persist it if this is a new account
+        try {
+          const info = await fetch("https://www.googleapis.com/oauth2/v1/userinfo", {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }).then(r => r.json());
+          if (info.email && info.email !== gmailAccount) {
+            await api.updateMe({ gmail_account: info.email });
+            onAccountLinked(info.email);
+          }
+        } catch { /* non-fatal */ }
+        setToken(accessToken);
+      },
+    });
+  }
+
+  // On open: use cached session token if available, otherwise init GIS
   useEffect(() => {
     if (!clientId) {
       setError("VITE_GOOGLE_CLIENT_ID is not configured.");
       return;
     }
-    loadGIS().then(() => {
-      tokenClientRef.current = google.accounts.oauth2.initTokenClient({
-        client_id: clientId,
-        scope: "https://www.googleapis.com/auth/gmail.readonly",
-        callback: (resp: any) => {
-          setConnecting(false);
-          if (resp.error) {
-            setError(`Google sign-in failed: ${resp.error}`);
-          } else {
-            setToken(resp.access_token);
-          }
-        },
-      });
-    });
+    const cached = sessionStorage.getItem(SESSION_TOKEN_KEY);
+    if (cached) {
+      setToken(cached);
+      return;
+    }
+    loadGIS().then(() => buildTokenClient(gmailAccount));
   }, [clientId]);
 
-  // Auto-load first page of recent messages once we have a token
+  // Auto-load first page once we have a token
   useEffect(() => {
     if (token) fetchMessages(token, "", null);
   }, [token]);
 
-  // Debounce search input — resets to page 1 for the new query
+  // Debounce search — resets to page 1
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -215,15 +239,20 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
       const list = await gmailFetch<{ messages?: GmailMessageListItem[]; nextPageToken?: string }>(
         accessToken, `/messages?${params}`
       );
-      const items = list.messages ?? [];
       setNextPageToken(list.nextPageToken ?? null);
       const full = await Promise.all(
-        items.map(m => gmailFetch<GmailMessageFull>(accessToken, `/messages/${m.id}?format=full`))
+        (list.messages ?? []).map(m =>
+          gmailFetch<GmailMessageFull>(accessToken, `/messages/${m.id}?format=full`)
+        )
       );
       setMessages(full.map(parseMessage));
     } catch (err: any) {
       if (err.message?.includes("401")) {
+        // Cached token expired — clear it and re-init GIS for reconnect
+        sessionStorage.removeItem(SESSION_TOKEN_KEY);
         setToken(null);
+        setMessages([]);
+        loadGIS().then(() => buildTokenClient(gmailAccount));
         setError("Google session expired. Please reconnect.");
       } else {
         setError(err.message ?? "Failed to fetch messages.");
@@ -231,6 +260,12 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
     } finally {
       setSearching(false);
     }
+  }
+
+  function handleConnect() {
+    setConnecting(true);
+    setError(null);
+    tokenClientRef.current?.requestAccessToken();
   }
 
   function handleNextPage() {
@@ -317,16 +352,26 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
         {/* Connect state */}
         {!token && clientId && (
           <div className="gmail-picker-connect">
-            <p className="gmail-picker-hint">
-              Sign in with Google to browse and import messages directly into this ticket.
-              Only read access is requested — no emails will be sent or modified.
-            </p>
+            {gmailAccount ? (
+              <p className="gmail-picker-hint">
+                Reconnect your Google account to continue browsing messages.
+              </p>
+            ) : (
+              <p className="gmail-picker-hint">
+                Sign in with Google to browse and import messages directly into this ticket.
+                Only read access is requested — no emails will be sent or modified.
+              </p>
+            )}
             <button
               className="btn btn-primary"
               onClick={handleConnect}
               disabled={connecting}
             >
-              {connecting ? "Waiting for Google sign-in…" : "Connect Google Account"}
+              {connecting
+                ? "Waiting for Google sign-in…"
+                : gmailAccount
+                  ? `Continue as ${gmailAccount}`
+                  : "Connect Google Account"}
             </button>
           </div>
         )}
