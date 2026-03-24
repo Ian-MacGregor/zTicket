@@ -35,6 +35,7 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [assignModal, setAssignModal] = useState<{ pendingStatus: string } | null>(null);
   const [assignModalUser, setAssignModalUser] = useState("");
@@ -128,18 +129,22 @@ export default function TicketDetailPage() {
     }
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length || !id) return;
+  const uploadFiles = async (files: FileList) => {
+    if (!files.length || !id) return;
     setUploading(true);
     try {
-      await api.uploadFiles(id, e.target.files);
-      load(); // refresh
+      await api.uploadFiles(id, files);
+      load();
     } catch (err) {
       console.error(err);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) uploadFiles(e.target.files);
   };
 
   const handleDownloadAll = async () => {
@@ -461,7 +466,12 @@ export default function TicketDetailPage() {
       )}
 
       {/* ── Files ───────────────────────────────────── */}
-      <div className="detail-section">
+      <div
+        className={`detail-section files-drop-zone${dragOver ? " files-drop-zone--active" : ""}`}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragOver(false); }}
+        onDrop={(e) => { e.preventDefault(); setDragOver(false); if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); }}
+      >
         <div className="section-header">
           <h2>Files</h2>
           <div className="section-actions">
@@ -514,6 +524,10 @@ export default function TicketDetailPage() {
         ) : (
           <p className="empty-files">No files attached yet.</p>
         )}
+
+        <div className="files-drop-hint">
+          {dragOver ? "Drop to upload" : "or drag & drop files here"}
+        </div>
       </div>
 
       {/* ── Wait / Hold Modal ───────────────────────── */}
