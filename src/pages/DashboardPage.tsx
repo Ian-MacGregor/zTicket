@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
@@ -80,6 +80,12 @@ export default function DashboardPage() {
   const [waitHoldModal,   setWaitHoldModal]   = useState<{ ticketId: string } | null>(null);
   const [waitHoldReason,  setWaitHoldReason]  = useState("");
 
+  // ── Activity ticker ──────────────────────────────────────
+  const activityItemsWrapRef = useRef<HTMLDivElement>(null);
+  const activityItemsRef = useRef<HTMLDivElement>(null);
+  const [activityOverflows, setActivityOverflows] = useState(false);
+  const [activityScrollDist, setActivityScrollDist] = useState(0);
+
   // ── Refresh key — incremented by polling and status changes ─
   const [fetchKey, setFetchKey] = useState(0);
   // When true, the next fetch triggered by fetchKey is a silent background
@@ -131,6 +137,22 @@ export default function DashboardPage() {
     }, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // ── Activity overflow detection ──────────────────────────
+  useEffect(() => {
+    const check = () => {
+      const wrap = activityItemsWrapRef.current;
+      const items = activityItemsRef.current;
+      if (!wrap || !items) return;
+      const overflow = items.scrollWidth - wrap.clientWidth;
+      setActivityOverflows(overflow > 0);
+      setActivityScrollDist(Math.max(0, overflow));
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    if (activityItemsWrapRef.current) ro.observe(activityItemsWrapRef.current);
+    return () => ro.disconnect();
+  }, [activity]);
 
   // ── Reset page when any filter/sort changes ───────────────
   // (search reset is handled in the debounce effect above)
@@ -199,16 +221,31 @@ export default function DashboardPage() {
 
       {/* ── Activity Strip ──────────────────────────── */}
       {activity.length > 0 && (
-        <div className="activity-strip">
+        <div
+          className="activity-strip"
+          data-overflow={activityOverflows ? "true" : undefined}
+        >
           <span className="activity-label">Recent</span>
-          {activity.map((a, i) => (
-            <span key={a.id} className="activity-item">
-              {i > 0 && <span className="activity-sep">·</span>}
-              <span className="activity-ref">#{a.ticket?.ref_number}</span>
-              {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
-              <span className="activity-time">{timeAgo(a.created_at)}</span>
-            </span>
-          ))}
+          <div className="activity-items-wrap" ref={activityItemsWrapRef}>
+            <div
+              className="activity-items"
+              ref={activityItemsRef}
+              style={{
+                "--scroll-dist": `-${activityScrollDist}px`,
+                "--ticker-dur": `${Math.max(3, activityScrollDist / 80)}s`,
+              } as CSSProperties}
+            >
+              {activity.map((a, i) => (
+                <span key={a.id} className="activity-item">
+                  {i > 0 && <span className="activity-sep">·</span>}
+                  <span className="activity-ref">#{a.ticket?.ref_number}</span>
+                  {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
+                  <span className="activity-time">{timeAgo(a.created_at)}</span>
+                </span>
+              ))}
+            </div>
+            {activityOverflows && <span className="activity-ellipsis">…</span>}
+          </div>
         </div>
       )}
 
