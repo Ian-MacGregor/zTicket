@@ -105,7 +105,12 @@ function parseMessage(msg: GmailMessageFull): ParsedMessage {
     snippet: msg.snippet,
     bodyHtml: html,
     bodyText: text,
-    receivedAt: new Date(parseInt(msg.internalDate)).toISOString(),
+    receivedAt: (() => {
+      const dateHeader = getHeader(headers, "Date");
+      const fromHeader = dateHeader ? new Date(dateHeader).getTime() : NaN;
+      const ts = isNaN(fromHeader) ? parseInt(msg.internalDate) : fromHeader;
+      return new Date(ts).toISOString();
+    })(),
   };
 }
 

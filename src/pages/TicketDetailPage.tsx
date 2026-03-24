@@ -401,7 +401,7 @@ export default function TicketDetailPage() {
                       {em.from_name ? `${em.from_name} <${em.from_email}>` : em.from_email}
                     </span>
                     <span className="email-card-date">
-                      {em.received_at ? new Date(em.received_at).toLocaleString() : "—"}
+                      Sent: {em.received_at ? new Date(em.received_at).toLocaleString() : "—"}
                     </span>
                   </div>
                   <div className="email-card-subject-row">
