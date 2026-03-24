@@ -232,7 +232,11 @@ export default function DashboardPage() {
               <div className="menu-dropdown">
                 <Link    to="/activity" className="menu-item" onClick={() => setMenuOpen(false)}>Activity</Link>
                 <Link    to="/clients"  className="menu-item" onClick={() => setMenuOpen(false)}>Clients</Link>
-                <Link    to="/colors"   className="menu-item" onClick={() => setMenuOpen(false)}>Colors</Link>
+                <Link    to="/colors"   className="menu-item" onClick={() => setMenuOpen(false)}>
+                  {["C","o","l","o","r","s"].map((ch, i) => (
+                    <span key={i} style={{ color: ["#ff4e4e","#ff9f2e","#ffe83d","#4ecb4e","#4ea8ff","#b24eff"][i] }}>{ch}</span>
+                  ))}
+                </Link>
                 <Link    to="/settings" className="menu-item" onClick={() => setMenuOpen(false)}>Settings</Link>
                 <button className="menu-item menu-item--danger" onClick={signOut}>Sign out</button>
               </div>

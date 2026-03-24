@@ -26,8 +26,9 @@ Email and password authentication powered by Supabase. Only email addresses adde
 ### Dashboard (`/`)
 The main view showing all tickets across the company. Features include:
 
-- **Activity feed** — a subtle bar between the title bar and the stat cards showing the 5 most recent ticket events (e.g. "#123 Taylor set status to "Review" · 5m ago"). Refreshes every 30 seconds and immediately after any status change.
-- **Stat cards** — clickable filter cards showing global ticket counts. Cards: Active (assigned + review combined), Unassigned, Wait/Hold, Assigned, Review, Done, Total. Counts always reflect the whole database regardless of active filters. Clicking a card filters the list to that status; clicking "Total" resets all filters. The active filter card is highlighted. **Active is the default filter** when the page loads.
+- **Activity feed** — a single-line bar between the title bar and the stat cards showing the 5 most recent ticket events (e.g. "#123 Taylor set status to "Review" · 5m ago"). If the events overflow the line they are clipped with a "…" indicator; hovering the strip scrolls it like a ticker to reveal the hidden items. Refreshes every 30 seconds and immediately after any status change.
+- **Menu** — a "Menu ▾" button in the top-right corner opens a dropdown with links to Activity, Clients, Colors, Settings, and Sign out.
+- **Stat cards** — clickable filter cards showing global ticket counts. Cards: Active (assigned + review combined), Unassigned, Assigned, Review, Wait/Hold, Done, Total. Counts always reflect the whole database regardless of active filters. Clicking a card filters the list to that status; clicking "Total" resets all filters. The active filter card is highlighted. **Active is the default filter** when the page loads.
 - **Pagination** — tickets are loaded 10 per page by default (configurable to 25, 50, or 100). All filtering, sorting, and searching is performed server-side so sort order and result counts are accurate across the full dataset.
 - **Filters** — priority and client dropdowns. Status filtering via stat card clicks.
 - **Search** — joined type selector + text input. Search types: description, ticket #, client, assignee, reviewer, date created, date updated. Search is debounced and runs server-side.
@@ -39,16 +40,19 @@ The main view showing all tickets across the company. Features include:
 - **Auto-refresh** — ticket list, stat cards, and activity feed refresh automatically every 30 seconds without a visible flash.
 
 ### Ticket Detail (`/tickets/:id`)
-Full ticket view showing all metadata, file attachments, imported emails, and forum-style comments. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
+Full ticket view showing all metadata, file attachments, imported emails, and forum-style comments. From here you can upload files (via button or drag-and-drop onto the Files section), download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
 
 Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), imported emails, and attached files.
 
-**Emails** — the Emails section shows all Gmail messages imported to this ticket. Each email card displays the sender, date, subject, and a snippet. Clicking "View" expands the card to show the full message body (HTML emails render in a sandboxed iframe; plain-text emails render in a pre block). Click "✕" to remove an email from the ticket. Click **+ Import Gmail Message** to open the Gmail picker modal:
+**Files** — the Files section doubles as a drag-and-drop target. Drag one or more files anywhere onto the section to upload them instantly, or use the Upload Files button. A dashed highlight and "Drop to upload" hint appear while files are being dragged over the zone.
 
-1. Click **Connect Google Account** — a Google OAuth popup requests read-only Gmail access.
-2. Once connected, recent messages load automatically. Type in the search box to filter by any Gmail search query (e.g. `from:jane subject:invoice`).
-3. Check one or more messages and click **Import Messages**. The full message content (subject, sender, body) is fetched from Gmail and stored in the database so all team members can read it without needing Gmail access.
-4. Already-imported messages are shown as disabled with an "Already imported" badge.
+**Emails** — the Emails section shows all Gmail messages imported to this ticket. Each email card displays the sender, the email's sent timestamp (from the email `Date` header), subject, and a snippet. Clicking "View" expands the card to show the full message body (HTML emails render in a sandboxed iframe; plain-text emails render in a pre block). Click "✕" to remove an email from the ticket. Click **+ Import Gmail Message** to open the Gmail picker modal:
+
+1. If a Gmail account is already linked (via Settings), the picker reconnects silently using the stored account as a hint — no account picker is shown. Otherwise click **Connect Google Account** to authenticate.
+2. Once connected, recent messages load automatically (10 per page). Type in the search box to filter by any Gmail search query (e.g. `from:jane subject:invoice`). Use **Next →** / **← Prev** to page through results — additional API requests are only made when explicitly requested.
+3. Check one or more messages across any number of pages — selections are remembered as you paginate.
+4. Click **Import Messages**. The full message content (subject, sender, body) is fetched from Gmail and stored in the database so all team members can read it without needing Gmail access.
+5. Already-imported messages are shown as disabled with an "Already imported" badge.
 
 Requires `VITE_GOOGLE_CLIENT_ID` to be set (see Environment Variables and Gmail Integration below).
 
@@ -69,6 +73,14 @@ Form for creating or editing tickets. Fields include:
 
 ### Clients (`/clients`)
 Manage the client list and their contacts. Each client has a name and a contact list. Contacts have a name, email, phone, and role/title. Clients appear in the ticket form dropdown and as filter options on the dashboard.
+
+### Activity (`/activity`)
+A full paginated log of all ticket activity events across the system. Shows 50 records per page with columns: timestamp, ticket reference number, user, and action. Clicking a row navigates to that ticket's detail page. Accessible from the Menu dropdown on the dashboard.
+
+### Settings (`/settings`)
+Accessible from the Menu dropdown on the dashboard. Currently contains:
+
+- **Gmail Account** — link or change the Google account used for Gmail import. Once linked, the account email is stored in your user profile so the Gmail picker can reconnect silently on future sessions without prompting for account selection. A "Disconnect" button clears the stored account. "Change Account" forces a new account selection via Google's account picker.
 
 ### Colors (`/colors`)
 Per-user color customization with three categories:
@@ -110,7 +122,9 @@ zTicket/
 │       ├── TicketFormPage.tsx
 │       ├── TicketDetailPage.tsx
 │       ├── ClientsPage.tsx
-│       └── ColorsPage.tsx
+│       ├── ColorsPage.tsx
+│       ├── SettingsPage.tsx
+│       └── ActivityPage.tsx
 ├── index.html
 ├── vite.config.ts
 ├── tsconfig.json
@@ -183,10 +197,13 @@ The Gmail import feature lets users pull email content directly into tickets, st
 Email content is fetched entirely in the browser using the Gmail API (no Gmail credentials are stored on the server). The flow per user:
 
 1. The `GmailPickerModal` loads the [Google Identity Services](https://developers.google.com/identity/gsi/web) script dynamically on first open.
-2. Clicking **Connect Google Account** calls `google.accounts.oauth2.initTokenClient` and requests an access token with `https://www.googleapis.com/auth/gmail.readonly` scope — read-only, no send/modify access.
-3. The access token is used directly from the browser to call `https://gmail.googleapis.com/gmail/v1/users/me/messages` (list) and `…/messages/:id?format=full` (full MIME content) — Google's API supports browser CORS.
-4. MIME parts are decoded client-side (base64url → UTF-8) and the parsed content is `POST`-ed to `/api/tickets/:id/emails` for storage.
-5. The token is ephemeral (lives in component state, valid ~1 hour) — nothing is persisted on the server.
+2. If a Gmail account was previously linked (stored in the user's profile via `PATCH /api/users/me`), the token client is initialised with that email as a `hint` and `prompt: ""` — Google reconnects silently without showing an account picker. Otherwise, clicking **Connect Google Account** triggers the full OAuth flow.
+3. The access token is requested with `https://www.googleapis.com/auth/gmail.readonly email` scopes — read-only Gmail access plus the `email` scope needed to confirm the signed-in address via Google's userinfo endpoint.
+4. On first link, the signed-in Google account email is fetched from `https://www.googleapis.com/oauth2/v1/userinfo` and saved to the user's profile via `PATCH /api/users/me`. The access token is also cached in `sessionStorage` so the picker can reload messages on subsequent opens within the same browser session without re-authenticating.
+5. The access token is used directly from the browser to call `https://gmail.googleapis.com/gmail/v1/users/me/messages` (list, 10 per page) and `…/messages/:id?format=full` (full MIME content) — Google's API supports browser CORS.
+6. The email's sent timestamp is parsed from the `Date` header in the message headers (falling back to Gmail's `internalDate` if unavailable).
+7. MIME parts are decoded client-side (base64url → UTF-8) and the parsed content is `POST`-ed to `/api/tickets/:id/emails` for storage.
+8. If the access token expires (401 from Gmail), it is cleared from `sessionStorage` and the user is prompted to reconnect.
 
 ### One-time Google Cloud setup
 
