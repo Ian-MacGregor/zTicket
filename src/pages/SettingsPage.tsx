@@ -44,7 +44,7 @@ export default function SettingsPage() {
   function initTokenClient(forcePickAccount: boolean) {
     tokenClientRef.current = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
-      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      scope: "https://www.googleapis.com/auth/gmail.readonly email",
       ...(forcePickAccount ? { prompt: "select_account" } : {}),
       callback: async (resp: any) => {
         setConnecting(false);
@@ -59,8 +59,8 @@ export default function SettingsPage() {
           const updated = await api.updateMe({ gmail_account: info.email });
           setMe(updated);
           setSuccess(`Gmail account linked: ${info.email}`);
-        } catch {
-          setError("Failed to save Gmail account.");
+        } catch (err: any) {
+          setError(err?.message ?? "Failed to save Gmail account.");
         } finally {
           setSaving(false);
         }

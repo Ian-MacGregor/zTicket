@@ -167,7 +167,7 @@ export default function GmailPickerModal({
   function buildTokenClient(hint: string | null) {
     tokenClientRef.current = google.accounts.oauth2.initTokenClient({
       client_id: clientId,
-      scope: "https://www.googleapis.com/auth/gmail.readonly",
+      scope: "https://www.googleapis.com/auth/gmail.readonly email",
       // If we already know the account, skip the picker and skip re-prompting consent
       ...(hint ? { hint, prompt: "" } : {}),
       callback: async (resp: any) => {
