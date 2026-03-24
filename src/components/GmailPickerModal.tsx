@@ -142,7 +142,6 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
 
   const [token, setToken]               = useState<string | null>(null);
   const [connecting, setConnecting]     = useState(false);
-  const [query, setQuery]               = useState("");
   const [pendingQuery, setPendingQuery] = useState("");
   const [messages, setMessages]         = useState<ParsedMessage[]>([]);
   const [searching, setSearching]       = useState(false);
@@ -150,8 +149,17 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
   const [importing, setImporting]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
-  const tokenClientRef = useRef<any>(null);
-  const debounceRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Pagination: prevTokens holds the page tokens for pages we've already visited,
+  // so we can go backwards. currentToken is what was used to fetch the current page.
+  // nextPageToken is what the API returned for the page after this one.
+  const [prevTokens, setPrevTokens]       = useState<(string | null)[]>([]);
+  const [currentToken, setCurrentToken]   = useState<string | null>(null);
+  const [nextPageToken, setNextPageToken] = useState<string | null>(null);
+  const pageNumber = prevTokens.length + 1;
+
+  const tokenClientRef  = useRef<any>(null);
+  const debounceRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeQueryRef  = useRef(""); // tracks the query in effect for the current page set
 
   // Initialise the GIS token client once the script has loaded
   useEffect(() => {
@@ -175,31 +183,40 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
     });
   }, [clientId]);
 
-  // Auto-search for recent messages once we have a token
+  // Auto-load first page of recent messages once we have a token
   useEffect(() => {
-    if (token) fetchMessages(token, "");
+    if (token) fetchMessages(token, "", null);
   }, [token]);
 
-  // Debounce search input
+  // Debounce search input — resets to page 1 for the new query
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      if (token) fetchMessages(token, pendingQuery);
+      if (token) resetAndFetch(token, pendingQuery);
     }, 400);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [pendingQuery, token]);
 
-  async function fetchMessages(accessToken: string, q: string) {
+  function resetAndFetch(accessToken: string, q: string) {
+    activeQueryRef.current = q;
+    setPrevTokens([]);
+    setCurrentToken(null);
+    setNextPageToken(null);
+    fetchMessages(accessToken, q, null);
+  }
+
+  async function fetchMessages(accessToken: string, q: string, pageToken: string | null) {
     setSearching(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ maxResults: "25" });
+      const params = new URLSearchParams({ maxResults: "10" });
       if (q.trim()) params.set("q", q.trim());
-      const list = await gmailFetch<{ messages?: GmailMessageListItem[] }>(
+      if (pageToken) params.set("pageToken", pageToken);
+      const list = await gmailFetch<{ messages?: GmailMessageListItem[]; nextPageToken?: string }>(
         accessToken, `/messages?${params}`
       );
       const items = list.messages ?? [];
-      // Fetch full details in parallel (max 25)
+      setNextPageToken(list.nextPageToken ?? null);
       const full = await Promise.all(
         items.map(m => gmailFetch<GmailMessageFull>(accessToken, `/messages/${m.id}?format=full`))
       );
@@ -214,6 +231,21 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
     } finally {
       setSearching(false);
     }
+  }
+
+  function handleNextPage() {
+    if (!token || !nextPageToken) return;
+    setPrevTokens(prev => [...prev, currentToken]);
+    setCurrentToken(nextPageToken);
+    fetchMessages(token, activeQueryRef.current, nextPageToken);
+  }
+
+  function handlePrevPage() {
+    if (!token || prevTokens.length === 0) return;
+    const prev = prevTokens[prevTokens.length - 1];
+    setPrevTokens(p => p.slice(0, -1));
+    setCurrentToken(prev);
+    fetchMessages(token, activeQueryRef.current, prev);
   }
 
   function handleConnect() {
@@ -352,6 +384,24 @@ export default function GmailPickerModal({ ticketId, importedGmailIds, onClose, 
                   </label>
                 );
               })}
+            </div>
+
+            <div className="gmail-picker-pagination">
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handlePrevPage}
+                disabled={prevTokens.length === 0 || searching}
+              >
+                ← Prev
+              </button>
+              <span className="gmail-picker-page">Page {pageNumber}</span>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleNextPage}
+                disabled={!nextPageToken || searching}
+              >
+                Next →
+              </button>
             </div>
 
             <div className="modal-actions">

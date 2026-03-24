@@ -1122,8 +1122,8 @@ a {
 
 /* ── Gmail Picker Modal ───────────────────────────────────── */
 .gmail-picker-modal {
-  width: min(700px, 96vw);
-  max-width: min(700px, 96vw);
+  width: min(960px, 96vw);
+  max-width: min(960px, 96vw);
   max-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -1296,6 +1296,23 @@ a {
   font-size: 0.82rem;
   color: var(--text-muted);
   flex: 1;
+}
+
+.gmail-picker-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 8px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.gmail-picker-page {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  min-width: 48px;
+  text-align: center;
 }
 
 .gmail-picker-modal .modal-actions {
