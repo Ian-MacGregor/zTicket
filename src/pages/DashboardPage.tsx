@@ -257,9 +257,9 @@ export default function DashboardPage() {
           const cards = [
             { key: "active",     label: "Active",     val: activeCount,      color: null },
             { key: "unassigned", label: "Unassigned", val: stats.unassigned, color: STATUS_COLORS["unassigned"] },
-            { key: "wait_hold",  label: "Wait/Hold",  val: stats.wait_hold,  color: STATUS_COLORS["wait_hold"] },
             { key: "assigned",   label: "Assigned",   val: stats.assigned,   color: STATUS_COLORS["assigned"] },
             { key: "review",     label: "Review",     val: stats.review,     color: STATUS_COLORS["review"] },
+            { key: "wait_hold",  label: "Wait/Hold",  val: stats.wait_hold,  color: STATUS_COLORS["wait_hold"] },
             { key: "done",       label: "Done",       val: stats.done,       color: STATUS_COLORS["done"] },
             { key: "total",      label: "Total",      val: stats.total,      color: null },
           ];
