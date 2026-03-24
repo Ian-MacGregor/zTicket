@@ -160,9 +160,10 @@ export default function GmailPickerModal({
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const pageNumber = prevTokens.length + 1;
 
-  const tokenClientRef = useRef<any>(null);
-  const debounceRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const activeQueryRef = useRef("");
+  const tokenClientRef  = useRef<any>(null);
+  const debounceRef     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeQueryRef  = useRef("");
+  const allMessagesRef  = useRef<Map<string, ParsedMessage>>(new Map());
 
   function buildTokenClient(hint: string | null) {
     tokenClientRef.current = google.accounts.oauth2.initTokenClient({
@@ -223,6 +224,8 @@ export default function GmailPickerModal({
 
   function resetAndFetch(accessToken: string, q: string) {
     activeQueryRef.current = q;
+    allMessagesRef.current = new Map();
+    setSelected(new Set());
     setPrevTokens([]);
     setCurrentToken(null);
     setNextPageToken(null);
@@ -245,7 +248,9 @@ export default function GmailPickerModal({
           gmailFetch<GmailMessageFull>(accessToken, `/messages/${m.id}?format=full`)
         )
       );
-      setMessages(full.map(parseMessage));
+      const parsed = full.map(parseMessage);
+      parsed.forEach(m => allMessagesRef.current.set(m.id, m));
+      setMessages(parsed);
     } catch (err: any) {
       if (err.message?.includes("401")) {
         // Cached token expired — clear it and re-init GIS for reconnect
@@ -302,7 +307,7 @@ export default function GmailPickerModal({
     if (!selected.size) return;
     setImporting(true);
     setError(null);
-    const toImport = messages.filter(m => selected.has(m.id));
+    const toImport = [...selected].map(id => allMessagesRef.current.get(id)).filter(Boolean) as ParsedMessage[];
     try {
       await Promise.all(
         toImport.map(m =>
