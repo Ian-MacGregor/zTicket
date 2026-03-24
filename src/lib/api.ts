@@ -171,7 +171,10 @@ export const api = {
     }),
 
   // Activity
-  listActivity: () => request<any[]>("/api/activity"),
+  listActivity: () =>
+    request<{ data: any[]; total: number }>("/api/activity?limit=5").then(r => r.data),
+  listActivityPaged: (page: number, limit: number) =>
+    request<{ data: any[]; total: number }>(`/api/activity?page=${page}&limit=${limit}`),
 
   // Colors
   getColors: () => request<any>("/api/colors"),

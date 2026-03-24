@@ -375,6 +375,53 @@ a {
   gap: 12px;
 }
 
+/* ── Menu dropdown ───────────────────────────── */
+.menu-wrap {
+  position: relative;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 160px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+
+.menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.menu-item--danger {
+  color: var(--status-wait-hold);
+}
+
+.menu-item--danger:hover {
+  background: color-mix(in srgb, var(--status-wait-hold) 12%, transparent);
+}
+
 .topbar-email {
   font-size: 0.85rem;
   color: var(--text-muted);
@@ -911,6 +958,66 @@ a {
 }
 
 /* (gmail-link-row removed — replaced by GmailPickerModal) */
+
+/* ── Activity Page ───────────────────────────────────────── */
+.activity-page-table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.activity-page-header,
+.activity-page-row {
+  display: grid;
+  grid-template-columns: 180px 80px 1fr 1fr;
+  gap: 0;
+  align-items: center;
+}
+
+.activity-page-header {
+  background: var(--bg-hover);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.activity-page-row {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+
+.activity-page-row:last-child {
+  border-bottom: none;
+}
+
+.activity-page-row:hover {
+  background: var(--bg-hover);
+}
+
+.activity-page-col {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activity-page-col--time {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.activity-page-col--ticket {
+  text-align: center;
+}
+
+.activity-page-col--action {
+  color: var(--text-secondary);
+}
 
 /* ── Settings Page ───────────────────────────────────────── */
 .settings-section {

@@ -13,6 +13,7 @@ import TicketDetailPage from "./pages/TicketDetailPage";
 import ClientsPage from "./pages/ClientsPage";
 import ColorsPage from "./pages/ColorsPage";
 import SettingsPage from "./pages/SettingsPage";
+import ActivityPage from "./pages/ActivityPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -85,6 +86,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity"
+        element={
+          <ProtectedRoute>
+            <ActivityPage />
           </ProtectedRoute>
         }
       />
