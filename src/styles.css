@@ -1203,7 +1203,7 @@ a {
 /* ── Gmail Picker Modal ───────────────────────────────────── */
 .gmail-picker-modal {
   width: min(820px, 96vw);
-  max-width: min(820px, 96vw);
+  max-width: min(820px, 96vw) !important;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
