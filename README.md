@@ -39,9 +39,18 @@ The main view showing all tickets across the company. Features include:
 - **Auto-refresh** — ticket list, stat cards, and activity feed refresh automatically every 30 seconds without a visible flash.
 
 ### Ticket Detail (`/tickets/:id`)
-Full ticket view showing all metadata, file attachments, Gmail links, and forum-style comments. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
+Full ticket view showing all metadata, file attachments, imported emails, and forum-style comments. From here you can upload files, download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
 
-Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), Gmail links, and attached files.
+Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), imported emails, and attached files.
+
+**Emails** — the Emails section shows all Gmail messages imported to this ticket. Each email card displays the sender, date, subject, and a snippet. Clicking "View" expands the card to show the full message body (HTML emails render in a sandboxed iframe; plain-text emails render in a pre block). Click "✕" to remove an email from the ticket. Click **+ Import Gmail Message** to open the Gmail picker modal:
+
+1. Click **Connect Google Account** — a Google OAuth popup requests read-only Gmail access.
+2. Once connected, recent messages load automatically. Type in the search box to filter by any Gmail search query (e.g. `from:jane subject:invoice`).
+3. Check one or more messages and click **Import Messages**. The full message content (subject, sender, body) is fetched from Gmail and stored in the database so all team members can read it without needing Gmail access.
+4. Already-imported messages are shown as disabled with an "Already imported" badge.
+
+Requires `VITE_GOOGLE_CLIENT_ID` to be set (see Environment Variables and Gmail Integration below).
 
 **Comments** — a full forum-style thread beneath the ticket metadata. Each comment shows the author's name, timestamp, and an "(edited)" marker if it has been updated. Authors see an Edit button on their own comments (RLS enforces this server-side too). An "Add Comment" box is always visible at the bottom of the thread.
 
@@ -55,7 +64,6 @@ Form for creating or editing tickets. Fields include:
 - **Quote Required** checkbox — when unchecked (default), the quoted fields are hidden and cleared on save. When checked, the following three fields appear:
   - Quoted time (free text, e.g. "2 weeks" or "40 hours")
   - Quoted price and quoted AMF increase (dollar amounts)
-- Gmail links (add multiple)
 - Wait/hold reason (only shown when status is set to Wait/Hold)
 - **Initial comment** (create mode only) — an optional first comment posted immediately after the ticket is created
 
@@ -88,7 +96,8 @@ zTicket/
 │   ├── main.tsx               # React entry point
 │   ├── styles.css             # All application styles
 │   ├── components/
-│   │   └── TicketIcon.tsx     # Reusable SVG ticket icon (stroke="currentColor", responds to user's button color)
+│   │   ├── TicketIcon.tsx     # Reusable SVG ticket icon (stroke="currentColor", responds to user's button color)
+│   │   └── GmailPickerModal.tsx  # Google OAuth + Gmail message search/select/import modal
 │   ├── hooks/
 │   │   ├── useAuth.tsx        # Auth context (Supabase session)
 │   │   └── useColors.tsx      # Color settings context (CSS variables)
@@ -119,6 +128,7 @@ Create a `.env` file in the project root (not committed to git):
 VITE_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJ...
 VITE_API_URL=https://your-api.railway.app
+VITE_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
 ```
 
 These are also configured as GitHub Actions secrets for the CI/CD pipeline (see Deployment below).
@@ -149,7 +159,7 @@ The app auto-deploys to GitHub Pages on every push to `master` via the `.github/
 
 ### Initial setup
 
-1. Go to your repo → **Settings → Secrets and variables → Actions** and add the three secrets listed above.
+1. Go to your repo → **Settings → Secrets and variables → Actions** and add the four secrets listed above (including `VITE_GOOGLE_CLIENT_ID`).
 2. Go to **Settings → Pages** and set the source to the `gh-pages` branch, root `/`.
 3. Update `vite.config.ts` `base` and `App.tsx` `BrowserRouter basename` to match your repo name.
 4. Push to `master` — the workflow handles the rest.
@@ -161,6 +171,33 @@ npm run build
 ```
 
 This creates a `dist/` folder. You no longer need to run `npm run deploy` manually unless you want to bypass the CI pipeline.
+
+---
+
+## Gmail Integration
+
+The Gmail import feature lets users pull email content directly into tickets, storing it in the database so the whole team can read it without needing access to anyone's inbox.
+
+### How it works
+
+Email content is fetched entirely in the browser using the Gmail API (no Gmail credentials are stored on the server). The flow per user:
+
+1. The `GmailPickerModal` loads the [Google Identity Services](https://developers.google.com/identity/gsi/web) script dynamically on first open.
+2. Clicking **Connect Google Account** calls `google.accounts.oauth2.initTokenClient` and requests an access token with `https://www.googleapis.com/auth/gmail.readonly` scope — read-only, no send/modify access.
+3. The access token is used directly from the browser to call `https://gmail.googleapis.com/gmail/v1/users/me/messages` (list) and `…/messages/:id?format=full` (full MIME content) — Google's API supports browser CORS.
+4. MIME parts are decoded client-side (base64url → UTF-8) and the parsed content is `POST`-ed to `/api/tickets/:id/emails` for storage.
+5. The token is ephemeral (lives in component state, valid ~1 hour) — nothing is persisted on the server.
+
+### One-time Google Cloud setup
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and create a project.
+2. Enable the **Gmail API** (APIs & Services → Library).
+3. Create an **OAuth 2.0 Client ID** (APIs & Services → Credentials → Create Credentials → OAuth client ID → Web application).
+4. Add your frontend URL(s) to **Authorised JavaScript origins** (e.g. `https://your-username.github.io` and `http://localhost:5173`).
+5. Configure the **OAuth consent screen** — set User Type to **External** and add your team's Google accounts as test users. No app verification is required while in testing mode (supports up to 100 test users).
+6. Copy the Client ID and set it as `VITE_GOOGLE_CLIENT_ID` in your `.env` and as a GitHub Actions secret.
+
+The Gmail API is free with no per-request cost. There is no billing to enable for this feature.
 
 ---
 
