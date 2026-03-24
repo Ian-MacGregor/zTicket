@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
+import GmailPickerModal from "../components/GmailPickerModal";
 
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "—";
@@ -40,6 +41,16 @@ export default function TicketDetailPage() {
   const [waitHoldReason, setWaitHoldReason] = useState("");
   const [statusError, setStatusError] = useState<string | null>(null);
 
+  // Emails
+  const [emails, setEmails]             = useState<any[]>([]);
+  const [gmailPickerOpen, setGmailPickerOpen] = useState(false);
+  const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
+
+  const loadEmails = () => {
+    if (!id) return;
+    api.listTicketEmails(id).then(setEmails).catch(console.error);
+  };
+
   // Comments
   const [comments, setComments] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -67,6 +78,7 @@ export default function TicketDetailPage() {
   useEffect(() => {
     load();
     loadComments();
+    loadEmails();
     api.listUsers().then(setUsers).catch(console.error);
     api.getMe().then((me) => setCurrentUserId(me.id)).catch(console.error);
   }, [id]);
@@ -355,20 +367,94 @@ export default function TicketDetailPage() {
         </div>
       </div>
 
-      {/* ── Gmail Links ─────────────────────────────── */}
-      {ticket.gmail_links?.length > 0 && (
-        <div className="detail-section">
-          <h2>Email Links</h2>
-          <ul className="gmail-links-list">
-            {ticket.gmail_links.map((link: string, i: number) => (
-              <li key={i}>
-                <a href={link} target="_blank" rel="noopener noreferrer">
-                  {link.length > 80 ? link.slice(0, 80) + "…" : link}
-                </a>
-              </li>
-            ))}
-          </ul>
+      {/* ── Emails ──────────────────────────────────── */}
+      <div className="detail-section">
+        <div className="section-header">
+          <h2>Emails</h2>
+          <button
+            className="btn btn-secondary btn-sm"
+            onClick={() => setGmailPickerOpen(true)}
+          >
+            + Import Gmail Message
+          </button>
         </div>
+
+        {emails.length === 0 && (
+          <p className="empty-files">No emails imported yet.</p>
+        )}
+
+        <div className="email-list">
+          {emails.map((em: any) => {
+            const isExpanded = expandedEmailId === em.id;
+            const hasBody    = em.body_html || em.body_text;
+            return (
+              <div key={em.id} className="email-card">
+                <div className="email-card-header">
+                  <div className="email-card-meta-row">
+                    <span className="email-card-from">
+                      {em.from_name ? `${em.from_name} <${em.from_email}>` : em.from_email}
+                    </span>
+                    <span className="email-card-date">
+                      {em.received_at ? new Date(em.received_at).toLocaleString() : "—"}
+                    </span>
+                  </div>
+                  <div className="email-card-subject-row">
+                    <span className="email-card-subject">{em.subject || "(no subject)"}</span>
+                    <div className="email-card-actions">
+                      {hasBody && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setExpandedEmailId(isExpanded ? null : em.id)}
+                        >
+                          {isExpanded ? "Hide" : "View"}
+                        </button>
+                      )}
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        title="Remove from ticket"
+                        onClick={async () => {
+                          if (!id || !confirm("Remove this email from the ticket?")) return;
+                          await api.deleteTicketEmail(id, em.id);
+                          loadEmails();
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                  {!isExpanded && em.snippet && (
+                    <p className="email-card-snippet">{em.snippet}</p>
+                  )}
+                </div>
+
+                {isExpanded && (
+                  <div className="email-card-body">
+                    {em.body_html ? (
+                      <iframe
+                        srcDoc={em.body_html}
+                        sandbox="allow-same-origin"
+                        className="email-iframe"
+                        title={em.subject || "Email"}
+                      />
+                    ) : (
+                      <pre className="email-body-text">{em.body_text}</pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Gmail Picker Modal ───────────────────────── */}
+      {gmailPickerOpen && id && (
+        <GmailPickerModal
+          ticketId={id}
+          importedGmailIds={emails.map((e: any) => e.gmail_message_id)}
+          onClose={() => setGmailPickerOpen(false)}
+          onImported={loadEmails}
+        />
       )}
 
       {/* ── Files ───────────────────────────────────── */}

@@ -23,7 +23,6 @@ export default function TicketFormPage() {
     assigned_to: "",
     reviewer: "",
     client_id: "",
-    gmail_links: [""],
     quote_required: false,
     quoted_time: "",
     quoted_price: "",
@@ -48,7 +47,6 @@ export default function TicketFormPage() {
             assigned_to: t.assignee?.id || "",
             reviewer: t.reviewer?.id || "",
             client_id: t.client?.id || "",
-            gmail_links: t.gmail_links?.length ? t.gmail_links : [""],
             quote_required: t.quote_required || false,
             quoted_time: t.quoted_time || "",
             quoted_price: t.quoted_price != null ? String(t.quoted_price) : "",
@@ -63,20 +61,6 @@ export default function TicketFormPage() {
 
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
-
-  const setGmailLink = (index: number, value: string) => {
-    const links = [...form.gmail_links];
-    links[index] = value;
-    setForm((prev) => ({ ...prev, gmail_links: links }));
-  };
-
-  const addGmailLink = () =>
-    setForm((prev) => ({ ...prev, gmail_links: [...prev.gmail_links, ""] }));
-
-  const removeGmailLink = (index: number) => {
-    const links = form.gmail_links.filter((_, i) => i !== index);
-    setForm((prev) => ({ ...prev, gmail_links: links.length ? links : [""] }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,7 +85,6 @@ export default function TicketFormPage() {
       assigned_to: form.assigned_to || null,
       reviewer: form.reviewer || null,
       client_id: form.client_id || null,
-      gmail_links: form.gmail_links.filter((l) => l.trim() !== ""),
       quote_required: form.quote_required,
       quoted_time: form.quote_required ? (form.quoted_time || null) : null,
       quoted_price: form.quote_required ? (form.quoted_price ? parseFloat(form.quoted_price) : null) : null,
@@ -324,35 +307,6 @@ export default function TicketFormPage() {
             </div>
           </>
         )}
-
-        {/* Gmail Links */}
-        <div className="form-group">
-          <label>Gmail Links</label>
-          {form.gmail_links.map((link, i) => (
-            <div key={i} className="gmail-link-row">
-              <input
-                type="url"
-                value={link}
-                onChange={(e) => setGmailLink(i, e.target.value)}
-                placeholder="https://mail.google.com/mail/u/0/#inbox/..."
-              />
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => removeGmailLink(i)}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={addGmailLink}
-          >
-            + Add link
-          </button>
-        </div>
 
         {/* Initial Comment — create mode only */}
         {!isEdit && (

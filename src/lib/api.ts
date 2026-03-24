@@ -150,6 +150,20 @@ export const api = {
       body: JSON.stringify({ body }),
     }),
 
+  // Ticket emails
+  listTicketEmails: (ticketId: string) =>
+    request<any[]>(`/api/tickets/${ticketId}/emails`),
+  importEmail: (ticketId: string, body: any) =>
+    request<any>(`/api/tickets/${ticketId}/emails`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  deleteTicketEmail: (ticketId: string, emailId: string) =>
+    request<any>(`/api/tickets/${ticketId}/emails/${emailId}`, {
+      method: "DELETE",
+    }),
+
   // Activity
   listActivity: () => request<any[]>("/api/activity"),
 
