@@ -120,7 +120,9 @@ async function gmailFetch<T>(token: string, path: string): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error((body as any).error?.message ?? `Gmail API error ${res.status}`);
+    const err = new Error((body as any).error?.message ?? `Gmail API error ${res.status}`) as Error & { status: number };
+    err.status = res.status;
+    throw err;
   }
   return res.json();
 }
@@ -257,7 +259,7 @@ export default function GmailPickerModal({
       parsed.forEach(m => allMessagesRef.current.set(m.id, m));
       setMessages(parsed);
     } catch (err: any) {
-      if (err.message?.includes("401")) {
+      if (err.status === 401) {
         // Cached token expired — clear it and re-init GIS for reconnect
         sessionStorage.removeItem(SESSION_TOKEN_KEY);
         setToken(null);
@@ -270,12 +272,6 @@ export default function GmailPickerModal({
     } finally {
       setSearching(false);
     }
-  }
-
-  function handleConnect() {
-    setConnecting(true);
-    setError(null);
-    tokenClientRef.current?.requestAccessToken();
   }
 
   function handleNextPage() {
