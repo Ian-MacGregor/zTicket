@@ -403,7 +403,7 @@ export default function DashboardPage() {
               Status{sortArrow("status")}
             </div>
             <div className="ticket-col-info sort-col" onClick={() => handleColSort("title", "asc")}>
-              Description{sortArrow("title")}
+              Subject{sortArrow("title")}
             </div>
             <div className="ticket-col-client sort-col" onClick={() => handleColSort("client", "asc")}>
               Client{sortArrow("client")}

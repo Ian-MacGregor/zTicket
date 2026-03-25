@@ -32,7 +32,7 @@ The main view showing all tickets across the company. Features include:
 - **Pagination** — tickets are loaded 10 per page by default (configurable to 25, 50, or 100). All filtering, sorting, and searching is performed server-side so sort order and result counts are accurate across the full dataset.
 - **Filters** — priority and client dropdowns. Status filtering via stat card clicks.
 - **Search** — joined type selector + text input. Search types: description, ticket #, client, assignee, reviewer, date created, date updated. Search is debounced and runs server-side.
-- **Column header sorting** — click any column header (# / Status / Description / Client / Priority / Owner / Dates) to sort by that column; click again to reverse. Active sort column shows ↑ or ↓ indicator.
+- **Column header sorting** — click any column header (# / Status / Subject / Client / Priority / Owner / Dates) to sort by that column; click again to reverse. Active sort column shows ↑ or ↓ indicator.
 - **My Tickets / My Reviews** — quick-filter buttons that show tickets assigned to or awaiting review by the current user.
 - **Inline status changes** — the status dropdown on each ticket row updates the ticket immediately without leaving the dashboard. Changing to "assigned" from "unassigned" opens a user-picker modal; changing to "wait/hold" prompts for a reason.
 - **Visual highlights** — tickets assigned to the current user get a colored outline matching the "assigned" status color. Tickets awaiting the current user's review get an outline matching the "review" status color.
