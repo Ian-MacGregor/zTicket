@@ -7,7 +7,9 @@ interface Contact {
   name: string;
   email: string;
   phone: string;
+  phone2: string;
   role: string;
+  distribute_code: boolean;
 }
 
 interface Client {
@@ -36,7 +38,9 @@ export default function ClientsPage() {
     name: "",
     email: "",
     phone: "",
+    phone2: "",
     role: "",
+    distribute_code: false,
   });
 
   // Edit contact form
@@ -44,7 +48,9 @@ export default function ClientsPage() {
     name: "",
     email: "",
     phone: "",
+    phone2: "",
     role: "",
+    distribute_code: false,
   });
 
   const load = () => {
@@ -95,7 +101,7 @@ export default function ClientsPage() {
     try {
       await api.addContact(clientId, contactForm);
       setAddingContactTo(null);
-      setContactForm({ name: "", email: "", phone: "", role: "" });
+      setContactForm({ name: "", email: "", phone: "", phone2: "", role: "", distribute_code: false });
       load();
     } catch (err) {
       console.error(err);
@@ -254,6 +260,14 @@ export default function ClientsPage() {
                       />
                       <input
                         type="text"
+                        placeholder="Phone 2"
+                        value={contactForm.phone2}
+                        onChange={(e) =>
+                          setContactForm({ ...contactForm, phone2: e.target.value })
+                        }
+                      />
+                      <input
+                        type="text"
                         placeholder="Role / Title"
                         value={contactForm.role}
                         onChange={(e) =>
@@ -261,6 +275,16 @@ export default function ClientsPage() {
                         }
                       />
                     </div>
+                    <label className="contact-distribute-label">
+                      <input
+                        type="checkbox"
+                        checked={contactForm.distribute_code}
+                        onChange={(e) =>
+                          setContactForm({ ...contactForm, distribute_code: e.target.checked })
+                        }
+                      />
+                      Distribute Code to This Contact?
+                    </label>
                     <button
                       className="btn btn-primary btn-sm"
                       onClick={() => handleAddContact(client.id)}
@@ -313,6 +337,17 @@ export default function ClientsPage() {
                               />
                               <input
                                 type="text"
+                                placeholder="Phone 2"
+                                value={editContactForm.phone2}
+                                onChange={(e) =>
+                                  setEditContactForm({
+                                    ...editContactForm,
+                                    phone2: e.target.value,
+                                  })
+                                }
+                              />
+                              <input
+                                type="text"
                                 placeholder="Role / Title"
                                 value={editContactForm.role}
                                 onChange={(e) =>
@@ -323,6 +358,19 @@ export default function ClientsPage() {
                                 }
                               />
                             </div>
+                            <label className="contact-distribute-label">
+                              <input
+                                type="checkbox"
+                                checked={editContactForm.distribute_code}
+                                onChange={(e) =>
+                                  setEditContactForm({
+                                    ...editContactForm,
+                                    distribute_code: e.target.checked,
+                                  })
+                                }
+                              />
+                              Distribute Code to This Contact?
+                            </label>
                             <div className="contact-form-actions">
                               <button
                                 className="btn btn-primary btn-sm"
@@ -347,9 +395,12 @@ export default function ClientsPage() {
                                 {contact.name}
                               </span>
                               <span className="contact-meta">
-                                {[contact.role, contact.email, contact.phone]
+                                {[contact.role, contact.email, contact.phone, contact.phone2]
                                   .filter(Boolean)
                                   .join(" · ")}
+                                {contact.distribute_code && (
+                                  <span className="contact-distribute-badge">Distribute Code</span>
+                                )}
                               </span>
                             </div>
                             <div className="contact-actions">
@@ -361,7 +412,9 @@ export default function ClientsPage() {
                                     name: contact.name,
                                     email: contact.email || "",
                                     phone: contact.phone || "",
+                                    phone2: contact.phone2 || "",
                                     role: contact.role || "",
+                                    distribute_code: contact.distribute_code ?? false,
                                   });
                                 }}
                               >
