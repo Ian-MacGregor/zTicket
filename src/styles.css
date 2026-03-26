@@ -415,11 +415,11 @@ a {
 }
 
 .menu-item--danger {
-  color: var(--status-wait-hold);
+  color: var(--btn-primary);
 }
 
 .menu-item--danger:hover {
-  background: color-mix(in srgb, var(--status-wait-hold) 12%, transparent);
+  background: color-mix(in srgb, var(--btn-primary) 12%, transparent);
 }
 
 .topbar-email {
@@ -2100,8 +2100,8 @@ a {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 6px;
-  background: var(--accent);
-  color: #fff;
+  background: var(--btn-primary);
+  color: #0e0f11;
   font-size: 0.7rem;
   font-weight: 600;
   border-radius: var(--radius-sm);

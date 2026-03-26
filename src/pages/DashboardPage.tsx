@@ -264,7 +264,16 @@ export default function DashboardPage() {
               {activity.map((a, i) => (
                 <span key={a.id} className="activity-item">
                   {i > 0 && <span className="activity-sep">·</span>}
-                  <span className="activity-ref">#{a.ticket?.ref_number}</span>
+                  <span
+                    className="activity-ref"
+                    style={{
+                      color: a.ticket?.status === "review"
+                        ? "var(--status-review)"
+                        : a.ticket?.status === "assigned" && a.ticket?.assigned_to === user?.id
+                          ? "var(--status-assigned)"
+                          : undefined,
+                    }}
+                  >#{a.ticket?.ref_number}</span>
                   {" "}{a.actor?.full_name || a.actor?.email || "Someone"} {a.action}
                   <span className="activity-time">{timeAgo(a.created_at)}</span>
                 </span>
