@@ -267,7 +267,7 @@ export default function DashboardPage() {
                   <span
                     className="activity-ref"
                     style={{
-                      color: a.ticket?.status === "review"
+                      color: a.ticket?.status === "review" && a.ticket?.reviewer === user?.id
                         ? "var(--status-review)"
                         : a.ticket?.status === "assigned" && a.ticket?.assigned_to === user?.id
                           ? "var(--status-assigned)"
