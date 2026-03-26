@@ -1149,7 +1149,7 @@ a {
   font-family: var(--font-mono);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--btn-primary);
   white-space: nowrap;
 }
 
