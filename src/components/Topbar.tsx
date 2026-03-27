@@ -19,10 +19,10 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
-      <div className="topbar-left">
+      <Link to="/" className="topbar-left topbar-home">
         <TicketIcon size={26} className="topbar-logo" />
         <h1>zTicket</h1>
-      </div>
+      </Link>
       <div className="topbar-right">
         <span className="topbar-email">{user?.email}</span>
         <div className="menu-wrap" ref={menuRef}>
@@ -31,6 +31,7 @@ export default function Topbar() {
           </button>
           {menuOpen && (
             <div className="menu-dropdown">
+              <Link to="/"         className="menu-item" onClick={() => setMenuOpen(false)}>Dashboard</Link>
               <Link to="/activity" className="menu-item" onClick={() => setMenuOpen(false)}>Activity</Link>
               <Link to="/clients"  className="menu-item" onClick={() => setMenuOpen(false)}>Clients</Link>
               <Link to="/colors"   className="menu-item" onClick={() => setMenuOpen(false)}>

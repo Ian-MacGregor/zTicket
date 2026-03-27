@@ -358,6 +358,19 @@ a {
   gap: 12px;
 }
 
+.topbar-home {
+  text-decoration: none;
+  color: inherit;
+}
+
+.topbar-home:hover .topbar-logo {
+  color: var(--accent);
+}
+
+.topbar-home:hover h1 {
+  color: var(--text-primary);
+}
+
 .topbar-logo {
   color: var(--btn-primary);
   flex-shrink: 0;
@@ -2354,33 +2367,114 @@ a {
 .app-layout {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+}
+
+/* Scrollable content area below the topbar */
+.app-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ============================================================
-   PANEL DRAWER
+   DASHBOARD SPLIT LAYOUT (sidebar + ticket panel)
    ============================================================ */
-.panel-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 200;
+.dashboard-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.panel-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: min(720px, 100vw);
-  background: var(--bg-page);
-  border-left: 1px solid var(--border);
+.dashboard-sidebar-pane {
+  width: 420px;
+  min-width: 320px;
+  flex-shrink: 0;
   overflow-y: auto;
-  z-index: 201;
-  animation: drawer-slide-in 0.22s ease;
+  border-right: 1px solid var(--border);
 }
 
-@keyframes drawer-slide-in {
-  from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+.dashboard-panel-pane {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+}
+
+.panel-pane-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-page);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  flex-shrink: 0;
+}
+
+.panel-close-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.12s, color 0.12s;
+}
+
+.panel-close-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Compact dashboard (sidebar mode) ─────────────────────── */
+.dashboard-compact {
+  max-width: none;
+  margin: 0;
+  padding: 16px 16px 20px;
+}
+
+/* Hide non-essential sections in compact mode */
+.dashboard-compact .activity-strip,
+.dashboard-compact .stats-row {
+  display: none;
+}
+
+/* Compact ticket table — keep ref, status, title only */
+.dashboard-compact .ticket-row {
+  grid-template-columns: 44px 80px 1fr;
+  padding: 10px 12px;
+  gap: 8px;
+}
+
+.dashboard-compact .ticket-col-client,
+.dashboard-compact .ticket-col-priority,
+.dashboard-compact .ticket-col-owner,
+.dashboard-compact .ticket-col-files,
+.dashboard-compact .ticket-col-dates {
+  display: none;
+}
+
+/* Hide table header columns that are now hidden */
+.dashboard-compact .ticket-table-header .ticket-col-client,
+.dashboard-compact .ticket-table-header .ticket-col-priority,
+.dashboard-compact .ticket-table-header .ticket-col-owner,
+.dashboard-compact .ticket-table-header .ticket-col-files,
+.dashboard-compact .ticket-table-header .ticket-col-dates {
+  display: none;
+}
+
+/* Selected row highlight */
+.ticket-row-selected {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-card)) !important;
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 2px;
 }

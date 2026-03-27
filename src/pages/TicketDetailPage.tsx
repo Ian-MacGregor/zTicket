@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import GmailPickerModal from "../components/GmailPickerModal";
 
@@ -29,11 +29,6 @@ const STATUS_LABELS: Record<string, string> = {
 export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const handleBack = () => {
-    if ((location.state as any)?.backgroundLocation) navigate(-1);
-    else navigate("/");
-  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [ticket, setTicket] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -173,8 +168,7 @@ export default function TicketDetailPage() {
   const handleDelete = async () => {
     if (!id || !confirm("Permanently delete this ticket?")) return;
     await api.deleteTicket(id);
-    if ((location.state as any)?.backgroundLocation) navigate(-1);
-    else navigate("/");
+    navigate("/");
   };
 
   if (loading) return <div className="loading-state">Loading…</div>;
@@ -184,15 +178,8 @@ export default function TicketDetailPage() {
     <div className="detail-page">
       {/* ── Header ──────────────────────────────────── */}
       <header className="detail-header">
-        <button className="btn btn-ghost" onClick={handleBack}>
-          ← All Tickets
-        </button>
         <div className="detail-actions">
-          <Link
-            to={`/tickets/${id}/edit`}
-            state={{ backgroundLocation: (location.state as any)?.backgroundLocation || location }}
-            className="btn btn-secondary"
-          >
+          <Link to={`/tickets/${id}/edit`} className="btn btn-secondary">
             Edit
           </Link>
           <button className="btn btn-danger" onClick={handleDelete}>

@@ -46,10 +46,12 @@ function getLastStatusDate(ticket: any): string | null {
   return ticket.status_updated_at || ticket.created_at;
 }
 
-export default function DashboardPage() {
+export default function DashboardPage({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  // In compact mode, highlight the currently selected ticket row
+  const selectedId = location.pathname.match(/^\/tickets\/([^/]+?)(?:\/edit)?$/)?.[1] ?? null;
 
   // ── Ticket data ──────────────────────────────────────────
   const [tickets, setTickets]   = useState<any[]>([]);
@@ -204,7 +206,7 @@ export default function DashboardPage() {
   const rangeEnd   = Math.min(page * limit, total);
 
   return (
-    <div className="dashboard">
+    <div className={compact ? "dashboard dashboard-compact" : "dashboard"}>
       {/* ── Activity Strip ──────────────────────────── */}
       {activity.length > 0 && (
         <div
@@ -300,7 +302,7 @@ export default function DashboardPage() {
             My Reviews
           </button>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate("/tickets/new", { state: { backgroundLocation: location } })}>+ New Ticket</button>
+        <button className="btn btn-primary" onClick={() => navigate("/tickets/new")}>+ New Ticket</button>
       </div>
 
       {/* ── Filter Bar ──────────────────────────────── */}
@@ -417,6 +419,7 @@ export default function DashboardPage() {
               "ticket-row",
               isMyAssignment ? "ticket-row-my-assigned" : "",
               isMyReview     ? "ticket-row-my-review"   : "",
+              selectedId === t.id ? "ticket-row-selected" : "",
             ].filter(Boolean).join(" ");
 
             return (
@@ -454,7 +457,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Title + meta */}
-                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`, { state: { backgroundLocation: location } })}>
+                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
                   <span className="ticket-title">{t.title}</span>
                   <span className="ticket-meta">
                     {t.status === "wait_hold" && t.wait_hold_reason
