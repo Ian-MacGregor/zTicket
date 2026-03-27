@@ -2367,40 +2367,45 @@ a {
 .app-layout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 /* Scrollable content area below the topbar */
 .app-content {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
 }
 
 /* ============================================================
-   DASHBOARD SPLIT LAYOUT (sidebar + ticket panel)
+   IN-PAGE TICKET SPLIT (sidebar table + detail panel)
    ============================================================ */
-.dashboard-split {
+.ticket-area-split {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  gap: 0;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.dashboard-sidebar-pane {
-  width: 420px;
-  min-width: 320px;
+.ticket-split-sidebar {
+  width: 380px;
+  min-width: 280px;
   flex-shrink: 0;
-  overflow-y: auto;
   border-right: 1px solid var(--border);
 }
 
-.dashboard-panel-pane {
+/* Remove double border: ticket-table already has its own border, but
+   inside the split the container handles the border */
+.ticket-area-split .ticket-table {
+  border: none;
+  border-radius: 0;
+}
+
+.ticket-split-panel {
   flex: 1;
-  overflow-y: auto;
-  position: relative;
+  min-width: 0;
+  border-left: 1px solid var(--border);
 }
 
 .panel-pane-header {
@@ -2408,11 +2413,10 @@ a {
   justify-content: flex-end;
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-page);
+  background: var(--bg-elevated);
   position: sticky;
   top: 0;
   z-index: 5;
-  flex-shrink: 0;
 }
 
 .panel-close-btn {
@@ -2434,40 +2438,18 @@ a {
   color: var(--text-primary);
 }
 
-/* ── Compact dashboard (sidebar mode) ─────────────────────── */
-.dashboard-compact {
-  max-width: none;
-  margin: 0;
-  padding: 16px 16px 20px;
-}
-
-/* Hide non-essential sections in compact mode */
-.dashboard-compact .activity-strip,
-.dashboard-compact .stats-row {
-  display: none;
-}
-
-/* Compact ticket table — keep ref, status, title only */
-.dashboard-compact .ticket-row {
+/* ── Compact ticket table (sidebar mode) ──────────────────── */
+.ticket-table-compact .ticket-row {
   grid-template-columns: 44px 80px 1fr;
   padding: 10px 12px;
   gap: 8px;
 }
 
-.dashboard-compact .ticket-col-client,
-.dashboard-compact .ticket-col-priority,
-.dashboard-compact .ticket-col-owner,
-.dashboard-compact .ticket-col-files,
-.dashboard-compact .ticket-col-dates {
-  display: none;
-}
-
-/* Hide table header columns that are now hidden */
-.dashboard-compact .ticket-table-header .ticket-col-client,
-.dashboard-compact .ticket-table-header .ticket-col-priority,
-.dashboard-compact .ticket-table-header .ticket-col-owner,
-.dashboard-compact .ticket-table-header .ticket-col-files,
-.dashboard-compact .ticket-table-header .ticket-col-dates {
+.ticket-table-compact .ticket-col-client,
+.ticket-table-compact .ticket-col-priority,
+.ticket-table-compact .ticket-col-owner,
+.ticket-table-compact .ticket-col-files,
+.ticket-table-compact .ticket-col-dates {
   display: none;
 }
 

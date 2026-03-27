@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
@@ -46,11 +46,18 @@ function getLastStatusDate(ticket: any): string | null {
   return ticket.status_updated_at || ticket.created_at;
 }
 
-export default function DashboardPage({ compact = false }: { compact?: boolean }) {
+export default function DashboardPage({
+  panelContent,
+  onClosePanel,
+}: {
+  panelContent?: React.ReactNode;
+  onClosePanel?: () => void;
+}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  // In compact mode, highlight the currently selected ticket row
+  const compact = !!panelContent;
+  // Highlight the currently selected ticket row in the sidebar
   const selectedId = location.pathname.match(/^\/tickets\/([^/]+?)(?:\/edit)?$/)?.[1] ?? null;
 
   // ── Ticket data ──────────────────────────────────────────
@@ -206,7 +213,7 @@ export default function DashboardPage({ compact = false }: { compact?: boolean }
   const rangeEnd   = Math.min(page * limit, total);
 
   return (
-    <div className={compact ? "dashboard dashboard-compact" : "dashboard"}>
+    <div className="dashboard">
       {/* ── Activity Strip ──────────────────────────── */}
       {activity.length > 0 && (
         <div
@@ -364,8 +371,14 @@ export default function DashboardPage({ compact = false }: { compact?: boolean }
         </select>
       </div>
 
-      {/* ── Ticket List ─────────────────────────────── */}
-      <div className="ticket-table">
+      {/* ── Ticket Area ──────────────────────────────── */}
+      <div className={compact ? "ticket-area-split" : undefined}>
+
+        {/* Left side: ticket table (always rendered) */}
+        <div className={compact ? "ticket-split-sidebar" : undefined}>
+
+        {/* ── Ticket List ──────────────────────────── */}
+        <div className={`ticket-table${compact ? " ticket-table-compact" : ""}`}>
           <div className="ticket-table-header ticket-row">
             <div className="ticket-col-ref sort-col" onClick={() => handleColSort("ref", "desc")}>
               #{sortArrow("ref")}
@@ -391,165 +404,180 @@ export default function DashboardPage({ compact = false }: { compact?: boolean }
             </div>
           </div>
 
-      {loading ? (
-          <>
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="ticket-row ticket-row-skeleton">
-              <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
-              <div className="ticket-col-status"><span className="skeleton skeleton-badge" /></div>
-              <div className="ticket-col-info">
-                <span className="skeleton skeleton-title" />
-                <span className="skeleton skeleton-meta" />
+          {loading ? (
+            <>
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="ticket-row ticket-row-skeleton">
+                <div className="ticket-col-ref"><span className="skeleton skeleton-badge" /></div>
+                <div className="ticket-col-status"><span className="skeleton skeleton-badge" /></div>
+                <div className="ticket-col-info">
+                  <span className="skeleton skeleton-title" />
+                  <span className="skeleton skeleton-meta" />
+                </div>
+                <div className="ticket-col-client"><span className="skeleton skeleton-meta" /></div>
+                <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
+                <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
+                <div className="ticket-col-files" />
+                <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
               </div>
-              <div className="ticket-col-client"><span className="skeleton skeleton-meta" /></div>
-              <div className="ticket-col-priority"><span className="skeleton skeleton-priority" /></div>
-              <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
-              <div className="ticket-col-files" />
-              <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
-            </div>
-          ))}
-          </>
-      ) : tickets.length === 0 ? null : (
-          <>
+            ))}
+            </>
+          ) : tickets.length === 0 ? null : (
+            <>
+            {tickets.map((t) => {
+              const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
+              const isMyReview     = t.status === "review"   && t.reviewer?.id === user?.id;
+              const rowClass = [
+                "ticket-row",
+                isMyAssignment ? "ticket-row-my-assigned" : "",
+                isMyReview     ? "ticket-row-my-review"   : "",
+                selectedId === t.id ? "ticket-row-selected" : "",
+              ].filter(Boolean).join(" ");
 
-          {tickets.map((t) => {
-            const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
-            const isMyReview     = t.status === "review"   && t.reviewer?.id === user?.id;
-            const rowClass = [
-              "ticket-row",
-              isMyAssignment ? "ticket-row-my-assigned" : "",
-              isMyReview     ? "ticket-row-my-review"   : "",
-              selectedId === t.id ? "ticket-row-selected" : "",
-            ].filter(Boolean).join(" ");
+              return (
+                <div key={t.id} className={rowClass}>
+                  {/* Ref */}
+                  <div className="ticket-col-ref">
+                    <span className="ticket-ref">#{t.ref_number}</span>
+                  </div>
 
-            return (
-              <div key={t.id} className={rowClass}>
-                {/* Ref */}
-                <div className="ticket-col-ref">
-                  <span className="ticket-ref">#{t.ref_number}</span>
-                </div>
+                  {/* Status dropdown */}
+                  <div className="ticket-col-status">
+                    <select
+                      className="status-select"
+                      value={t.status}
+                      style={{ background: STATUS_COLORS[t.status], color: "#0e0f11" }}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        const newStatus = e.target.value;
+                        if (t.status === "unassigned" && newStatus === "assigned") {
+                          setAssignModalUser("");
+                          setAssignModal({ ticketId: t.id, pendingStatus: newStatus });
+                        } else if (newStatus === "wait_hold") {
+                          setWaitHoldReason("");
+                          setWaitHoldModal({ ticketId: t.id });
+                        } else {
+                          handleStatusChange(t.id, newStatus);
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {STATUSES.map((s) => (
+                        <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Status dropdown */}
-                <div className="ticket-col-status">
-                  <select
-                    className="status-select"
-                    value={t.status}
-                    style={{ background: STATUS_COLORS[t.status], color: "#0e0f11" }}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      const newStatus = e.target.value;
-                      if (t.status === "unassigned" && newStatus === "assigned") {
-                        setAssignModalUser("");
-                        setAssignModal({ ticketId: t.id, pendingStatus: newStatus });
-                      } else if (newStatus === "wait_hold") {
-                        setWaitHoldReason("");
-                        setWaitHoldModal({ ticketId: t.id });
-                      } else {
-                        handleStatusChange(t.id, newStatus);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Title + meta */}
-                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
-                  <span className="ticket-title">{t.title}</span>
-                  <span className="ticket-meta">
-                    {t.status === "wait_hold" && t.wait_hold_reason
-                      ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
-                      : <>&nbsp;</>}
-                  </span>
-                </div>
-
-                {/* Client */}
-                <div className="ticket-col-client">
-                  <span className="ticket-col-text">{t.client?.name || "—"}</span>
-                </div>
-
-                {/* Priority */}
-                <div className="ticket-col-priority">
-                  <span className={`priority-tag priority-${t.priority}`}>
-                    {PRIORITY_LABELS[t.priority]}
-                  </span>
-                </div>
-
-                {/* Owner */}
-                <div className="ticket-col-owner">
-                  <span className="ticket-col-text">
-                    {t.status === "review"
-                      ? (t.reviewer?.full_name  || "None")
-                      : (t.assignee?.full_name  || "None")}
-                  </span>
-                </div>
-
-                {/* Files */}
-                <div className="ticket-col-files">
-                  {t.files?.length > 0 && (
-                    <span className="file-count">
-                      <svg className="icon-clip" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12.5 7.5l-5.5 5.5a3 3 0 01-4.24-4.24l6.36-6.36a2 2 0 012.83 2.83L5.58 11.6a1 1 0 01-1.41-1.41L10 4.35" />
-                      </svg>
-                      {t.files.length}
+                  {/* Title + meta */}
+                  <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
+                    <span className="ticket-title">{t.title}</span>
+                    <span className="ticket-meta">
+                      {t.status === "wait_hold" && t.wait_hold_reason
+                        ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
+                        : <>&nbsp;</>}
                     </span>
-                  )}
-                </div>
+                  </div>
 
-                {/* Dates */}
-                <div className="ticket-col-dates">
-                  <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
-                  <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
-                </div>
-              </div>
-            );
-          })}
-        </>
-      )}
-      </div>
+                  {/* Client */}
+                  <div className="ticket-col-client">
+                    <span className="ticket-col-text">{t.client?.name || "—"}</span>
+                  </div>
 
-      {!loading && tickets.length === 0 && (
-        <div className="empty-state">
-          <p>No tickets match your filters.</p>
+                  {/* Priority */}
+                  <div className="ticket-col-priority">
+                    <span className={`priority-tag priority-${t.priority}`}>
+                      {PRIORITY_LABELS[t.priority]}
+                    </span>
+                  </div>
+
+                  {/* Owner */}
+                  <div className="ticket-col-owner">
+                    <span className="ticket-col-text">
+                      {t.status === "review"
+                        ? (t.reviewer?.full_name  || "None")
+                        : (t.assignee?.full_name  || "None")}
+                    </span>
+                  </div>
+
+                  {/* Files */}
+                  <div className="ticket-col-files">
+                    {t.files?.length > 0 && (
+                      <span className="file-count">
+                        <svg className="icon-clip" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12.5 7.5l-5.5 5.5a3 3 0 01-4.24-4.24l6.36-6.36a2 2 0 012.83 2.83L5.58 11.6a1 1 0 01-1.41-1.41L10 4.35" />
+                        </svg>
+                        {t.files.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Dates */}
+                  <div className="ticket-col-dates">
+                    <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
+                    <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+                  </div>
+                </div>
+              );
+            })}
+            </>
+          )}
         </div>
-      )}
 
-      {/* ── Pagination ──────────────────────────────── */}
-      <div className="pagination-row">
-        <button
-          className="btn btn-ghost btn-sm"
-          disabled={page <= 1 || loading}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          ← Prev
-        </button>
-        <div className="pagination-center">
-          <span className="pagination-info">Page {page} of {totalPages}</span>
-          <select
-            className="filter-select"
-            value={limit}
-            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+        {!loading && tickets.length === 0 && (
+          <div className="empty-state">
+            <p>No tickets match your filters.</p>
+          </div>
+        )}
+
+        {/* ── Pagination ────────────────────────────── */}
+        <div className="pagination-row">
+          <button
+            className="btn btn-ghost btn-sm"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((p) => p - 1)}
           >
-            <option value={10}>10 / page</option>
-            <option value={25}>25 / page</option>
-            <option value={50}>50 / page</option>
-            <option value={100}>100 / page</option>
-          </select>
-          <span className="sort-count">
-            {total === 0 ? "0 tickets" : `${rangeStart}–${rangeEnd} of ${total} ticket${total !== 1 ? "s" : ""}`}
-          </span>
+            ← Prev
+          </button>
+          <div className="pagination-center">
+            <span className="pagination-info">Page {page} of {totalPages}</span>
+            <select
+              className="filter-select"
+              value={limit}
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+            >
+              <option value={10}>10 / page</option>
+              <option value={25}>25 / page</option>
+              <option value={50}>50 / page</option>
+              <option value={100}>100 / page</option>
+            </select>
+            <span className="sort-count">
+              {total === 0 ? "0 tickets" : `${rangeStart}–${rangeEnd} of ${total} ticket${total !== 1 ? "s" : ""}`}
+            </span>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next →
+          </button>
         </div>
-        <button
-          className="btn btn-ghost btn-sm"
-          disabled={page >= totalPages || loading}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          Next →
-        </button>
-      </div>
+
+        </div>{/* end ticket-split-sidebar (or plain wrapper) */}
+
+        {/* Right side: ticket detail/form panel */}
+        {compact && panelContent && (
+          <div className="ticket-split-panel">
+            <div className="panel-pane-header">
+              <button className="panel-close-btn" onClick={onClosePanel}>
+                ✕ Close
+              </button>
+            </div>
+            {panelContent}
+          </div>
+        )}
+
+      </div>{/* end ticket-area-split (or plain wrapper) */}
 
       {/* ── Wait / Hold Modal ───────────────────────── */}
       {waitHoldModal && (

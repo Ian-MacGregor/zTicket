@@ -4,8 +4,8 @@ import {
   Route,
   Navigate,
   Outlet,
-  useLocation,
   useNavigate,
+  useOutlet,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { ColorProvider } from "./hooks/useColors";
@@ -26,35 +26,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Layout for the dashboard: splits into sidebar + panel when a ticket route is active
+// Always keeps DashboardPage mounted; passes outlet content in as a prop
+// so filter/pagination state is never reset when opening a ticket panel.
 function DashboardLayout() {
-  const location = useLocation();
+  const outlet = useOutlet();
   const navigate = useNavigate();
-  const isPanel = location.pathname.startsWith("/tickets");
 
-  return isPanel ? (
-    <div className="dashboard-split">
-      <div className="dashboard-sidebar-pane">
-        <DashboardPage compact />
-      </div>
-      <div className="dashboard-panel-pane">
-        <div className="panel-pane-header">
-          <button
-            className="panel-close-btn"
-            onClick={() => navigate("/")}
-            title="Close panel"
-          >
-            ✕ Close
-          </button>
-        </div>
-        <Outlet />
-      </div>
-    </div>
-  ) : (
-    <>
-      <DashboardPage />
-      <Outlet />
-    </>
+  return (
+    <DashboardPage
+      panelContent={outlet}
+      onClosePanel={() => navigate("/")}
+    />
   );
 }
 
