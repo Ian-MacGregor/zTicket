@@ -339,7 +339,7 @@ a {
 .dashboard {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px 60px;
+  padding: 24px 24px 60px;
 }
 
 /* Top bar */
@@ -347,9 +347,9 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 0;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 .topbar-left {
@@ -934,7 +934,7 @@ a {
 .form-page {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 24px 60px;
+  padding: 24px 24px 60px;
 }
 
 .form-header {
@@ -1113,7 +1113,7 @@ a {
 .detail-page {
   max-width: 820px;
   margin: 0 auto;
-  padding: 0 24px 60px;
+  padding: 24px 24px 60px;
 }
 
 .detail-header {
@@ -1683,12 +1683,12 @@ a {
 @media (max-width: 768px) {
   /* ── Layout containers ── */
   .dashboard {
-    padding: 0 16px 40px;
+    padding: 16px 16px 40px;
   }
 
   .form-page,
   .detail-page {
-    padding: 0 16px 40px;
+    padding: 16px 16px 40px;
   }
 
   /* ── Topbar ── */
@@ -1696,7 +1696,7 @@ a {
     flex-direction: row;
     align-items: center;
     gap: 8px;
-    padding: 14px 0;
+    padding: 14px 16px;
   }
 
   .topbar-left {
@@ -2346,4 +2346,41 @@ a {
   .color-input-row {
     flex-wrap: wrap;
   }
+}
+
+/* ============================================================
+   APP LAYOUT (shared topbar wrapper)
+   ============================================================ */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   PANEL DRAWER
+   ============================================================ */
+.panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+}
+
+.panel-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(720px, 100vw);
+  background: var(--bg-page);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 201;
+  animation: drawer-slide-in 0.22s ease;
+}
+
+@keyframes drawer-slide-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }

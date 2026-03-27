@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 
 export default function TicketFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const bgLocation = (location.state as any)?.backgroundLocation;
   const isEdit = Boolean(id);
 
   const [users, setUsers] = useState<any[]>([]);
@@ -95,13 +97,13 @@ export default function TicketFormPage() {
     try {
       if (isEdit && id) {
         await api.updateTicket(id, payload);
-        navigate(`/tickets/${id}`);
+        navigate(`/tickets/${id}`, { state: { backgroundLocation: bgLocation } });
       } else {
         const created = await api.createTicket(payload);
         if (initialComment.trim()) {
           await api.createComment(created.id, initialComment.trim());
         }
-        navigate(`/tickets/${created.id}`);
+        navigate(`/tickets/${created.id}`, { state: { backgroundLocation: bgLocation } });
       }
     } catch (err: any) {
       setError(err.message);

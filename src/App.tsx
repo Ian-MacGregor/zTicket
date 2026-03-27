@@ -3,9 +3,13 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { ColorProvider } from "./hooks/useColors";
+import Layout from "./components/Layout";
+import PanelDrawer from "./components/PanelDrawer";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import TicketFormPage from "./pages/TicketFormPage";
@@ -24,81 +28,119 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const backgroundLocation = (location.state as any)?.backgroundLocation;
 
   if (loading) return <div className="loading-state">Loading…</div>;
 
   return (
-    <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" replace /> : <LoginPage />}
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tickets/new"
-        element={
-          <ProtectedRoute>
-            <TicketFormPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tickets/:id"
-        element={
-          <ProtectedRoute>
-            <TicketDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/tickets/:id/edit"
-        element={
-          <ProtectedRoute>
-            <TicketFormPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/clients"
-        element={
-          <ProtectedRoute>
-            <ClientsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/colors"
-        element={
-          <ProtectedRoute>
-            <ColorsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/activity"
-        element={
-          <ProtectedRoute>
-            <ActivityPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      {/* Background (and direct-access) routes */}
+      <Routes location={backgroundLocation || location}>
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/" replace /> : <LoginPage />}
+        />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Layout><DashboardPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/new"
+          element={
+            <ProtectedRoute>
+              <Layout><TicketFormPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id"
+          element={
+            <ProtectedRoute>
+              <Layout><TicketDetailPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id/edit"
+          element={
+            <ProtectedRoute>
+              <Layout><TicketFormPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/clients"
+          element={
+            <ProtectedRoute>
+              <Layout><ClientsPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/colors"
+          element={
+            <ProtectedRoute>
+              <Layout><ColorsPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Layout><SettingsPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/activity"
+          element={
+            <ProtectedRoute>
+              <Layout><ActivityPage /></Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      {/* Overlay routes — rendered as a right-side drawer when backgroundLocation is present */}
+      {backgroundLocation && (
+        <PanelDrawer onClose={() => navigate(-1)}>
+          <Routes>
+            <Route
+              path="/tickets/new"
+              element={
+                <ProtectedRoute>
+                  <TicketFormPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id"
+              element={
+                <ProtectedRoute>
+                  <TicketDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <TicketFormPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </PanelDrawer>
+      )}
+    </>
   );
 }
 

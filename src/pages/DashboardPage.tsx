@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
-import TicketIcon from "../components/TicketIcon";
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
@@ -48,19 +47,9 @@ function getLastStatusDate(ticket: any): string | null {
 }
 
 export default function DashboardPage() {
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [menuOpen]);
+  const location = useLocation();
 
   // ── Ticket data ──────────────────────────────────────────
   const [tickets, setTickets]   = useState<any[]>([]);
@@ -216,35 +205,6 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard">
-      {/* ── Top Bar ─────────────────────────────────── */}
-      <header className="topbar">
-        <div className="topbar-left">
-          <TicketIcon size={26} className="topbar-logo" />
-          <h1>zTicket</h1>
-        </div>
-        <div className="topbar-right">
-          <span className="topbar-email">{user?.email}</span>
-          <div className="menu-wrap" ref={menuRef}>
-            <button className="btn btn-ghost" onClick={() => setMenuOpen(o => !o)}>
-              Menu ▾
-            </button>
-            {menuOpen && (
-              <div className="menu-dropdown">
-                <Link    to="/activity" className="menu-item" onClick={() => setMenuOpen(false)}>Activity</Link>
-                <Link    to="/clients"  className="menu-item" onClick={() => setMenuOpen(false)}>Clients</Link>
-                <Link    to="/colors"   className="menu-item" onClick={() => setMenuOpen(false)}>
-                  {["C","o","l","o","r","s"].map((ch, i) => (
-                    <span key={i} style={{ color: ["#ff4e4e","#ff9f2e","#ffe83d","#4ecb4e","#4ea8ff","#b24eff"][i] }}>{ch}</span>
-                  ))}
-                </Link>
-                <Link    to="/settings" className="menu-item" onClick={() => setMenuOpen(false)}>Settings</Link>
-                <button className="menu-item menu-item--danger" onClick={signOut}>Sign out</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
       {/* ── Activity Strip ──────────────────────────── */}
       {activity.length > 0 && (
         <div
@@ -340,7 +300,7 @@ export default function DashboardPage() {
             My Reviews
           </button>
         </div>
-        <Link to="/tickets/new" className="btn btn-primary">+ New Ticket</Link>
+        <button className="btn btn-primary" onClick={() => navigate("/tickets/new", { state: { backgroundLocation: location } })}>+ New Ticket</button>
       </div>
 
       {/* ── Filter Bar ──────────────────────────────── */}
@@ -494,7 +454,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Title + meta */}
-                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
+                <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`, { state: { backgroundLocation: location } })}>
                   <span className="ticket-title">{t.title}</span>
                   <span className="ticket-meta">
                     {t.status === "wait_hold" && t.wait_hold_reason
