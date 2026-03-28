@@ -603,24 +603,22 @@ export default function DashboardPage({
       </div>
 
       {/* ── Ticket Area ──────────────────────────────── */}
-      {compact ? (
-        <div className="ticket-area-split">
-          <div className="ticket-split-sidebar">
-            {ticketSection}
-          </div>
-          {panelContent && (
-            <>
-              <div className="panel-mobile-backdrop" onClick={onClosePanel} />
-              <div className={`ticket-split-panel${isNewTicket ? " ticket-split-panel--top" : ""}`}>
-                <div className="panel-pane-header" ref={panelHeaderRef}>
-                  <button className="panel-close-btn" onClick={onClosePanel}>✕ Close</button>
-                </div>
-                {panelContent}
-              </div>
-            </>
-          )}
+      <div className={`ticket-area-wrap${compact ? " is-compact" : ""}`}>
+        <div className="ticket-area-sidebar">
+          {ticketSection}
         </div>
-      ) : ticketSection}
+        {compact && panelContent && (
+          <>
+            <div className="panel-mobile-backdrop" onClick={onClosePanel} />
+            <div className={`ticket-split-panel${isNewTicket ? " ticket-split-panel--top" : ""}`}>
+              <div className="panel-pane-header" ref={panelHeaderRef}>
+                <button className="panel-close-btn" onClick={onClosePanel}>✕ Close</button>
+              </div>
+              {panelContent}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* ── Wait / Hold Modal ───────────────────────── */}
       {waitHoldModal && (

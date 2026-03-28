@@ -2416,25 +2416,34 @@ a {
 /* ============================================================
    IN-PAGE TICKET SPLIT (sidebar table + detail panel)
    ============================================================ */
-.ticket-area-split {
+.ticket-area-wrap {
   display: flex;
   gap: 0;
   align-items: flex-start;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
-.ticket-split-sidebar {
+.ticket-area-wrap.is-compact {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Sidebar: full width by default, animates to fixed width in compact */
+.ticket-area-sidebar {
+  width: 100%;
+  overflow: hidden;
+  transition: width 0.22s ease;
+}
+
+.ticket-area-wrap.is-compact .ticket-area-sidebar {
   width: 380px;
   min-width: 280px;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
 }
 
-/* Remove double border: ticket-table already has its own border, but
-   inside the split the container handles the border */
-.ticket-area-split .ticket-table {
+/* Remove double border: outer .ticket-area-wrap.is-compact provides it */
+.ticket-area-wrap.is-compact .ticket-table {
   border: none;
   border-radius: 0;
 }
@@ -2443,13 +2452,19 @@ a {
   flex: 1;
   min-width: 0;
   border-left: 1px solid var(--border);
+  animation: panel-slide-in 0.2s ease;
 }
 
-.ticket-split-sidebar .pagination-row {
+@keyframes panel-slide-in {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.ticket-area-wrap.is-compact .ticket-area-sidebar .pagination-row {
   grid-template-columns: auto 1fr auto;
 }
 
-.ticket-split-sidebar .pagination-center {
+.ticket-area-wrap.is-compact .ticket-area-sidebar .pagination-center {
   display: none;
 }
 
@@ -2499,7 +2514,7 @@ a {
 /* ── Compact ticket table (sidebar mode) ──────────────────── */
 .ticket-table-compact .ticket-row {
   grid-template-columns: 44px 1fr 20px;
-  padding: 10px 12px;
+  padding: 12px 12px;
   gap: 8px;
   cursor: pointer;
 }
