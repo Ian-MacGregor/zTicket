@@ -6,6 +6,7 @@ import {
   Outlet,
   useNavigate,
   useOutlet,
+  useLocation,
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { ColorProvider } from "./hooks/useColors";
@@ -31,10 +32,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function DashboardLayout() {
   const outlet = useOutlet();
   const navigate = useNavigate();
+  const location = useLocation();
+  // useOutlet() returns a truthy React element even when the index route has
+  // element={null}, so derive panel visibility from the URL instead.
+  const isTicketRoute = /^\/tickets\//.test(location.pathname);
 
   return (
     <DashboardPage
-      panelContent={outlet}
+      panelContent={isTicketRoute ? outlet : null}
       onClosePanel={() => navigate("/")}
     />
   );

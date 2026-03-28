@@ -239,6 +239,7 @@ export default function DashboardPage({
           <div className="ticket-col-dates sort-col" onClick={() => handleColSort("updated", "desc")}>
             Dates{sortArrow("updated")}
           </div>
+          <div className="ticket-col-arrow" />
         </div>
 
         {loading ? (
@@ -256,6 +257,7 @@ export default function DashboardPage({
               <div className="ticket-col-owner"><span className="skeleton skeleton-meta" /></div>
               <div className="ticket-col-files" />
               <div className="ticket-col-dates"><span className="skeleton skeleton-meta" /></div>
+              <div className="ticket-col-arrow" />
             </div>
           ))}
           </>
@@ -264,15 +266,20 @@ export default function DashboardPage({
           {tickets.map((t) => {
             const isMyAssignment = t.status === "assigned" && t.assignee?.id === user?.id;
             const isMyReview     = t.status === "review"   && t.reviewer?.id === user?.id;
+            const isSelected     = selectedId === t.id;
             const rowClass = [
               "ticket-row",
               isMyAssignment ? "ticket-row-my-assigned" : "",
               isMyReview     ? "ticket-row-my-review"   : "",
-              selectedId === t.id ? "ticket-row-selected" : "",
+              !compact && isSelected ? "ticket-row-selected" : "",
             ].filter(Boolean).join(" ");
 
             return (
-              <div key={t.id} className={rowClass}>
+              <div
+                key={t.id}
+                className={rowClass}
+                onClick={compact ? () => navigate(`/tickets/${t.id}`) : undefined}
+              >
                 <div className="ticket-col-ref">
                   <span className="ticket-ref">#{t.ref_number}</span>
                 </div>
@@ -337,6 +344,9 @@ export default function DashboardPage({
                 <div className="ticket-col-dates">
                   <span className="ticket-date">Created: {formatDateTime(t.created_at)}</span>
                   <span className="ticket-date">Updated: {formatDateTime(getLastStatusDate(t))}</span>
+                </div>
+                <div className="ticket-col-arrow">
+                  {isSelected ? "›" : null}
                 </div>
               </div>
             );

@@ -2446,19 +2446,34 @@ a {
   color: var(--text-primary);
 }
 
-/* ── Compact ticket table (sidebar mode) ──────────────────── */
-.ticket-table-compact .ticket-row {
-  grid-template-columns: 44px 80px 1fr;
-  padding: 10px 12px;
-  gap: 8px;
+/* ── Arrow column (hidden in full mode, visible in compact) ── */
+.ticket-col-arrow {
+  display: none;
 }
 
+/* ── Compact ticket table (sidebar mode) ──────────────────── */
+.ticket-table-compact .ticket-row {
+  grid-template-columns: 44px 1fr 20px;
+  padding: 10px 12px;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.ticket-table-compact .ticket-col-status,
 .ticket-table-compact .ticket-col-client,
 .ticket-table-compact .ticket-col-priority,
 .ticket-table-compact .ticket-col-owner,
 .ticket-table-compact .ticket-col-files,
 .ticket-table-compact .ticket-col-dates {
   display: none;
+}
+
+.ticket-table-compact .ticket-col-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 /* Selected row highlight */
