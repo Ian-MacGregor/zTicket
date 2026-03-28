@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
 declare const google: any;
@@ -21,7 +20,6 @@ function loadGIS(): Promise<void> {
 }
 
 export default function SettingsPage() {
-  const navigate = useNavigate();
 
   const [me, setMe]               = useState<any>(null);
   const [loading, setLoading]     = useState(true);
@@ -101,7 +99,6 @@ export default function SettingsPage() {
   return (
     <div className="form-page">
       <header className="form-header">
-        <button className="btn btn-ghost" onClick={() => navigate(-1)}>← Back</button>
         <h1>Settings</h1>
       </header>
 

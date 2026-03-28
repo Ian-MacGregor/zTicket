@@ -2195,6 +2195,15 @@ a {
   white-space: nowrap;
 }
 
+.ticket-client-tag {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -2490,6 +2499,13 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 2px;
+}
+
+/* ── Mobile: lock body scroll when panel overlay is open ─────── */
+@media (max-width: 768px) {
+  body.panel-open {
+    overflow: hidden;
+  }
 }
 
 /* ── Mobile: split panel becomes a fixed full-screen overlay ─ */

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useColors, DEFAULT_COLORS, ColorSettings } from "../hooks/useColors";
 
 interface ColorFieldDef {
@@ -60,8 +59,7 @@ function isValidHex(val: string): boolean {
 }
 
 export default function ColorsPage() {
-  const navigate = useNavigate();
-  const { colors, saveColors, loading } = useColors();
+const { colors, saveColors, loading } = useColors();
   const [draft, setDraft] = useState<ColorSettings>(colors);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -106,9 +104,6 @@ export default function ColorsPage() {
   return (
     <div className="colors-page">
       <header className="form-header">
-        <button className="btn btn-ghost" onClick={() => navigate("/")}>
-          ← Dashboard
-        </button>
         <h1>Colors</h1>
       </header>
 

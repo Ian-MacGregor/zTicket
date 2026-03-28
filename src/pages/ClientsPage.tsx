@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
 interface Contact {
@@ -19,8 +18,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
-  const navigate = useNavigate();
-  const [clients, setClients] = useState<Client[]>([]);
+const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [editingContact, setEditingContact] = useState<string | null>(null);
@@ -127,9 +125,6 @@ export default function ClientsPage() {
   return (
     <div className="clients-page">
       <header className="form-header">
-        <button className="btn btn-ghost" onClick={() => navigate("/")}>
-          ← Dashboard
-        </button>
         <h1>Clients</h1>
       </header>
 

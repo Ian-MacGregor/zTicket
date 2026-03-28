@@ -97,6 +97,13 @@ export default function DashboardPage({
   const [activityOverflows, setActivityOverflows] = useState(false);
   const [activityScrollDist, setActivityScrollDist] = useState(0);
 
+  // ── Lock body scroll on mobile when the panel overlay is open ─
+  useEffect(() => {
+    if (!compact) return;
+    document.body.classList.add("panel-open");
+    return () => document.body.classList.remove("panel-open");
+  }, [compact]);
+
   // ── Header height sync: keep panel-pane-header the same height
   // as ticket-table-header by observing the table header's resize ─
   const tableHeaderRef = useRef<HTMLDivElement>(null);
@@ -334,9 +341,14 @@ export default function DashboardPage({
                 <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
                   <span className="ticket-title">{t.title}</span>
                   <span className="ticket-meta">
-                    {t.status === "wait_hold" && t.wait_hold_reason
-                      ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
-                      : <>&nbsp;</>}
+                    {compact
+                      ? (t.client?.name
+                          ? <span className="ticket-client-tag">{t.client.name}</span>
+                          : null)
+                      : (t.status === "wait_hold" && t.wait_hold_reason
+                          ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
+                          : <>&nbsp;</>)
+                    }
                   </span>
                 </div>
                 <div className="ticket-col-client">

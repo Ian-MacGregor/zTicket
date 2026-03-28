@@ -33,7 +33,6 @@ export default function ActivityPage() {
   return (
     <div className="form-page">
       <header className="form-header">
-        <button className="btn btn-ghost" onClick={() => navigate("/")}>← Back</button>
         <h1>Activity</h1>
       </header>
 
