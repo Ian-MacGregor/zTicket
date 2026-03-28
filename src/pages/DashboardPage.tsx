@@ -341,14 +341,22 @@ export default function DashboardPage({
                 <div className="ticket-col-info" onClick={() => navigate(`/tickets/${t.id}`)}>
                   <span className="ticket-title">{t.title}</span>
                   <span className="ticket-meta">
-                    {compact
-                      ? (t.client?.name
-                          ? <span className="ticket-client-tag">{t.client.name}</span>
-                          : null)
-                      : (t.status === "wait_hold" && t.wait_hold_reason
-                          ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
-                          : <>&nbsp;</>)
-                    }
+                    {compact ? (
+                      <span className="ticket-compact-meta">
+                        <span
+                          className="ticket-status-dot"
+                          style={{ background: STATUS_COLORS[t.status] }}
+                        />
+                        <span className="ticket-status-label">{STATUS_LABELS[t.status]}</span>
+                        {t.client?.name && (
+                          <><span className="ticket-compact-sep">·</span><span className="ticket-client-tag">{t.client.name}</span></>
+                        )}
+                      </span>
+                    ) : (
+                      t.status === "wait_hold" && t.wait_hold_reason
+                        ? <span className="ticket-hold-reason">⏸ {t.wait_hold_reason}</span>
+                        : <>&nbsp;</>
+                    )}
                   </span>
                 </div>
                 <div className="ticket-col-client">
