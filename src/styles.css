@@ -2408,6 +2408,14 @@ a {
   border-left: 1px solid var(--border);
 }
 
+.ticket-split-sidebar .pagination-row {
+  grid-template-columns: auto 1fr auto;
+}
+
+.ticket-split-sidebar .pagination-center {
+  display: none;
+}
+
 .panel-pane-header {
   display: flex;
   justify-content: flex-end;
