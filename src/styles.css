@@ -2420,12 +2420,19 @@ a {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 12px 18px;
+  padding: 0 16px;
+  height: 42px; /* initial match; JS ResizeObserver overrides dynamically */
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
   position: sticky;
   top: 0;
   z-index: 5;
+}
+
+/* Hidden on desktop — backdrop blocks mobile dashboard interaction */
+.panel-mobile-backdrop {
+  display: none;
 }
 
 .panel-close-btn {
@@ -2487,13 +2494,23 @@ a {
 
 /* ── Mobile: split panel becomes a fixed full-screen overlay ─ */
 @media (max-width: 768px) {
+  /* Backdrop: dims the dashboard and blocks all interaction */
+  .panel-mobile-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.6);
+    cursor: pointer;
+  }
+
   /* Panel hovers over the ticket list as a viewport overlay */
   .ticket-split-panel {
     position: fixed;
     inset: 0;
     z-index: 200;
     overflow-y: auto;
-    background: var(--bg-page);
+    background: var(--bg-root);
     border-left: none;
   }
 

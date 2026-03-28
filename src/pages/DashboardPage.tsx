@@ -97,6 +97,27 @@ export default function DashboardPage({
   const [activityOverflows, setActivityOverflows] = useState(false);
   const [activityScrollDist, setActivityScrollDist] = useState(0);
 
+  // ── Header height sync: keep panel-pane-header the same height
+  // as ticket-table-header by observing the table header's resize ─
+  const tableHeaderRef = useRef<HTMLDivElement>(null);
+  const panelHeaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!compact) {
+      if (panelHeaderRef.current) panelHeaderRef.current.style.height = "";
+      return;
+    }
+    const sync = () => {
+      if (tableHeaderRef.current && panelHeaderRef.current) {
+        panelHeaderRef.current.style.height = `${tableHeaderRef.current.offsetHeight}px`;
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    if (tableHeaderRef.current) ro.observe(tableHeaderRef.current);
+    return () => ro.disconnect();
+  }, [compact]);
+
   // ── Refresh key — incremented by polling and status changes ─
   const [fetchKey, setFetchKey] = useState(0);
   // When true, the next fetch triggered by fetchKey is a silent background
@@ -218,7 +239,7 @@ export default function DashboardPage({
   const ticketSection = (
     <>
       <div className={compact ? "ticket-table ticket-table-compact" : "ticket-table"}>
-        <div className="ticket-table-header ticket-row">
+        <div className="ticket-table-header ticket-row" ref={tableHeaderRef}>
           <div className="ticket-col-ref sort-col" onClick={() => handleColSort("ref", "desc")}>
             #{sortArrow("ref")}
           </div>
@@ -564,12 +585,15 @@ export default function DashboardPage({
             {ticketSection}
           </div>
           {panelContent && (
-            <div className={`ticket-split-panel${isNewTicket ? " ticket-split-panel--top" : ""}`}>
-              <div className="panel-pane-header">
-                <button className="panel-close-btn" onClick={onClosePanel}>✕ Close</button>
+            <>
+              <div className="panel-mobile-backdrop" onClick={onClosePanel} />
+              <div className={`ticket-split-panel${isNewTicket ? " ticket-split-panel--top" : ""}`}>
+                <div className="panel-pane-header" ref={panelHeaderRef}>
+                  <button className="panel-close-btn" onClick={onClosePanel}>✕ Close</button>
+                </div>
+                {panelContent}
               </div>
-              {panelContent}
-            </div>
+            </>
           )}
         </div>
       ) : ticketSection}
