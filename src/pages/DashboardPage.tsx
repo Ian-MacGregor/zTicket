@@ -59,6 +59,8 @@ export default function DashboardPage({
   const compact = !!panelContent;
   // Highlight the currently selected ticket row in the sidebar
   const selectedId = location.pathname.match(/^\/tickets\/([^/]+?)(?:\/edit)?$/)?.[1] ?? null;
+  // New-ticket form has no matching row — panel floats to top on mobile
+  const isNewTicket = location.pathname.startsWith("/tickets/new");
 
   // ── Ticket data ──────────────────────────────────────────
   const [tickets, setTickets]   = useState<any[]>([]);
@@ -278,7 +280,7 @@ export default function DashboardPage({
               <div
                 key={t.id}
                 className={rowClass}
-                onClick={compact ? () => navigate(`/tickets/${t.id}`) : undefined}
+                onClick={compact ? () => isSelected ? onClosePanel?.() : navigate(`/tickets/${t.id}`) : undefined}
               >
                 <div className="ticket-col-ref">
                   <span className="ticket-ref">#{t.ref_number}</span>
@@ -562,7 +564,7 @@ export default function DashboardPage({
             {ticketSection}
           </div>
           {panelContent && (
-            <div className="ticket-split-panel">
+            <div className={`ticket-split-panel${isNewTicket ? " ticket-split-panel--top" : ""}`}>
               <div className="panel-pane-header">
                 <button className="panel-close-btn" onClick={onClosePanel}>✕ Close</button>
               </div>

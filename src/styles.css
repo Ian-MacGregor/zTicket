@@ -707,6 +707,8 @@ a {
   background: var(--bg-elevated) !important;
   border-bottom: 1px solid var(--border);
   cursor: default;
+  height: 42px;
+  box-sizing: border-box;
 }
 
 .ticket-table-header:hover {
@@ -2419,7 +2421,10 @@ a {
 .panel-pane-header {
   display: flex;
   justify-content: flex-end;
-  padding: 8px 16px;
+  align-items: center;
+  padding: 0 16px;
+  height: 42px;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
   position: sticky;
@@ -2482,4 +2487,69 @@ a {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 2px;
+}
+
+/* ── Mobile: split layout stacks vertically ───────────────── */
+@media (max-width: 768px) {
+  .ticket-area-split {
+    flex-direction: column;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+
+  .ticket-split-sidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  /* Restore ticket-table's own border inside mobile split */
+  .ticket-area-split .ticket-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .ticket-split-panel {
+    width: 100%;
+    border-left: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  /* New-ticket panel: place ABOVE the ticket list */
+  .ticket-split-panel--top {
+    order: -1;
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  /* Panel header not sticky on mobile — page scrolls as one unit */
+  .ticket-split-panel .panel-pane-header {
+    position: static;
+  }
+
+  /* Compact rows: restore full mobile card layout */
+  .ticket-table-compact .ticket-row {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto auto auto;
+    gap: 4px 8px;
+    padding: 12px 14px;
+    align-items: start;
+  }
+
+  /* Un-hide columns that compact mode collapsed */
+  .ticket-table-compact .ticket-col-status,
+  .ticket-table-compact .ticket-col-priority,
+  .ticket-table-compact .ticket-col-owner,
+  .ticket-table-compact .ticket-col-dates {
+    display: flex;
+  }
+
+  /* Arrow not needed on mobile — panel position makes selection obvious */
+  .ticket-table-compact .ticket-col-arrow {
+    display: none;
+  }
 }
