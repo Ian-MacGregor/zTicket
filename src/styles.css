@@ -2531,6 +2531,7 @@ a {
 
 /* ── Mobile: lock body scroll when panel overlay is open ─────── */
 @media (max-width: 768px) {
+  html.panel-open,
   body.panel-open,
   body.panel-open .app-content {
     overflow: hidden;

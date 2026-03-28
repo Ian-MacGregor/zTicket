@@ -101,7 +101,11 @@ export default function DashboardPage({
   useEffect(() => {
     if (!compact) return;
     document.body.classList.add("panel-open");
-    return () => document.body.classList.remove("panel-open");
+    document.documentElement.classList.add("panel-open");
+    return () => {
+      document.body.classList.remove("panel-open");
+      document.documentElement.classList.remove("panel-open");
+    };
   }, [compact]);
 
   // ── Header height sync: keep panel-pane-header the same height
