@@ -19,6 +19,7 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
+      <div className="topbar-inner">
       <Link to="/" className="topbar-left topbar-home">
         <TicketIcon size={26} className="topbar-logo" />
         <h1>zTicket</h1>
@@ -44,6 +45,7 @@ export default function Topbar() {
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   );
