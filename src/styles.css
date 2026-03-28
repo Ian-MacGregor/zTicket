@@ -707,8 +707,6 @@ a {
   background: var(--bg-elevated) !important;
   border-bottom: 1px solid var(--border);
   cursor: default;
-  height: 42px;
-  box-sizing: border-box;
 }
 
 .ticket-table-header:hover {
@@ -2422,9 +2420,7 @@ a {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 0 16px;
-  height: 42px;
-  box-sizing: border-box;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-elevated);
   position: sticky;
@@ -2489,58 +2485,36 @@ a {
   border-radius: 2px;
 }
 
-/* ── Mobile: split layout stacks vertically ───────────────── */
+/* ── Mobile: split panel becomes a fixed full-screen overlay ─ */
 @media (max-width: 768px) {
-  .ticket-area-split {
-    flex-direction: column;
-    border: none;
-    border-radius: 0;
-    overflow: visible;
-  }
-
-  .ticket-split-sidebar {
-    width: 100%;
-    border-right: none;
-  }
-
-  /* Restore ticket-table's own border inside mobile split */
-  .ticket-area-split .ticket-table {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-  }
-
+  /* Panel hovers over the ticket list as a viewport overlay */
   .ticket-split-panel {
-    width: 100%;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    overflow-y: auto;
+    background: var(--bg-page);
     border-left: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-    margin-top: 12px;
   }
 
-  /* New-ticket panel: place ABOVE the ticket list */
-  .ticket-split-panel--top {
-    order: -1;
-    margin-top: 0;
-    margin-bottom: 12px;
-  }
-
-  /* Panel header not sticky on mobile — page scrolls as one unit */
+  /* Keep Close button anchored at top while the panel content scrolls */
   .ticket-split-panel .panel-pane-header {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 201;
+    /* height already set globally; keep it */
   }
 
-  /* Compact rows: restore full mobile card layout */
+  /* Compact sidebar: restore full mobile card layout when panel is open */
   .ticket-table-compact .ticket-row {
     grid-template-columns: auto 1fr auto;
     grid-template-rows: auto auto auto auto;
     gap: 4px 8px;
     padding: 12px 14px;
     align-items: start;
+    cursor: pointer;
   }
 
-  /* Un-hide columns that compact mode collapsed */
   .ticket-table-compact .ticket-col-status,
   .ticket-table-compact .ticket-col-priority,
   .ticket-table-compact .ticket-col-owner,
@@ -2548,7 +2522,7 @@ a {
     display: flex;
   }
 
-  /* Arrow not needed on mobile — panel position makes selection obvious */
+  /* Arrow indicator not used in overlay mode */
   .ticket-table-compact .ticket-col-arrow {
     display: none;
   }
