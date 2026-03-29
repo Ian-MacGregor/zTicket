@@ -27,7 +27,6 @@ Email and password authentication powered by Supabase. Only email addresses adde
 The main view showing all tickets across the company. Features include:
 
 - **Activity feed** — a single-line bar between the title bar and the stat cards showing the 5 most recent ticket events (e.g. "#123 Taylor set status to "Review" · 5m ago"). If the events overflow the line they are clipped with a "…" indicator; hovering the strip scrolls it like a ticker to reveal the hidden items. Refreshes every 30 seconds and immediately after any status change.
-- **Menu** — a "Menu ▾" button in the top-right corner opens a dropdown with links to Activity, Clients, Colors, Settings, and Sign out.
 - **Stat cards** — clickable filter cards showing global ticket counts. Cards: Active (assigned + review combined), Unassigned, Assigned, Review, Wait/Hold, Done, Total. Counts always reflect the whole database regardless of active filters. Clicking a card filters the list to that status; clicking "Total" resets all filters. The active filter card is highlighted. **Active is the default filter** when the page loads.
 - **Pagination** — tickets are loaded 10 per page by default (configurable to 25, 50, or 100). All filtering, sorting, and searching is performed server-side so sort order and result counts are accurate across the full dataset.
 - **Filters** — priority and client dropdowns. Status filtering via stat card clicks.
@@ -39,8 +38,18 @@ The main view showing all tickets across the company. Features include:
 - **Skeleton loading** — stat cards and ticket rows show animated placeholders while data loads. The column header row is always visible during loading to prevent visual flicker.
 - **Auto-refresh** — ticket list, stat cards, and activity feed refresh automatically every 30 seconds without a visible flash.
 
+#### Inline split panel
+
+Clicking a ticket row, "+ New Ticket", or any ticket action does **not** navigate away from the dashboard. Instead, the ticket detail, create, and edit forms open in a split panel to the right of the ticket table:
+
+- The ticket table switches to a **compact sidebar** showing only the ticket reference number, title, a colored status dot with label, and the client name. A `›` indicator marks the currently open ticket.
+- Clicking the open ticket's row again closes the panel and returns the table to full-width. Clicking any other row switches to that ticket.
+- Dashboard filter state (status, priority, client, search, sort, page) is preserved across panel open/close — the dashboard never re-mounts or re-fetches due to a navigation.
+- On **mobile (≤ 768 px)** the panel appears as a full-screen overlay over the ticket list with a dimming backdrop. Tapping the backdrop closes it. The dashboard's background scroll is locked while the panel is open.
+- Navigating directly to `/tickets/:id` in the browser (no dashboard state) renders the ticket as a full-page view with the topbar — the same page just without the split layout behind it.
+
 ### Ticket Detail (`/tickets/:id`)
-Full ticket view showing all metadata, file attachments, imported emails, and forum-style comments. From here you can upload files (via button or drag-and-drop onto the Files section), download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
+Full ticket view showing all metadata, file attachments, imported emails, and forum-style comments. Rendered inline as a split panel on the dashboard or as a full page when accessed directly. From here you can upload files (via button or drag-and-drop onto the Files section), download all files as a zip, delete individual files, or navigate to edit the ticket. The status field is an inline dropdown — changing it saves immediately with the same modal prompts as the dashboard (user picker for "assigned", reason prompt for "wait/hold").
 
 Fields displayed: reference number, title, description, status (editable dropdown), priority, assigned developer, reviewer, client, created by, date created, date done, quoted fields (only shown when Quote Required is enabled), wait/hold reason (only shown when status is wait/hold), imported emails, and attached files.
 
@@ -59,7 +68,7 @@ Requires `VITE_GOOGLE_CLIENT_ID` to be set (see Environment Variables and Gmail 
 **Comments** — a full forum-style thread beneath the ticket metadata. Each comment shows the author's name, timestamp, and an "(edited)" marker if it has been updated. Authors see an Edit button on their own comments (RLS enforces this server-side too). An "Add Comment" box is always visible at the bottom of the thread.
 
 ### Create / Edit Ticket (`/tickets/new`, `/tickets/:id/edit`)
-Form for creating or editing tickets. Fields include:
+Form for creating or editing tickets. Rendered inline as a split panel on the dashboard or as a full page when accessed directly. Fields include:
 
 - Title and description
 - Priority and status (status only shown when editing)
@@ -75,10 +84,10 @@ Form for creating or editing tickets. Fields include:
 Manage the client list and their contacts. Each client has a name and a contact list. Contacts have a name, email, phone, and role/title. Clients appear in the ticket form dropdown and as filter options on the dashboard.
 
 ### Activity (`/activity`)
-A full paginated log of all ticket activity events across the system. Shows 50 records per page with columns: timestamp, ticket reference number, user, and action. Clicking a row navigates to that ticket's detail page. Accessible from the Menu dropdown on the dashboard.
+A full paginated log of all ticket activity events across the system. Shows 50 records per page with columns: timestamp, ticket reference number, user, and action. Clicking a row navigates to that ticket's detail page. Accessible from the Menu dropdown.
 
 ### Settings (`/settings`)
-Accessible from the Menu dropdown on the dashboard. Currently contains:
+Currently contains:
 
 - **Gmail Account** — link or change the Google account used for Gmail import. Once linked, the account email is stored in your user profile so the Gmail picker can reconnect silently on future sessions without prompting for account selection. A "Disconnect" button clears the stored account. "Change Account" forces a new account selection via Google's account picker.
 
@@ -93,6 +102,14 @@ Each color can be set via a native color wheel or by entering a hex (`#RRGGBB`) 
 
 ---
 
+## Navigation
+
+All protected pages share a persistent topbar (via the `Layout` component) containing the app logo/home link on the left and a "Menu ▾" dropdown on the right. The dropdown provides links to Dashboard, Activity, Clients, Colors, Settings, and Sign out. Individual pages do not have their own back buttons — all navigation is handled through the topbar.
+
+The topbar's inner content is constrained to the same 1100 px max-width as the dashboard content so the menu button stays near the right edge of the content area even on very wide monitors.
+
+---
+
 ## Project Structure
 
 ```
@@ -104,10 +121,12 @@ zTicket/
 │   ├── 404.html              # SPA redirect for GitHub Pages
 │   └── favicon.svg           # Browser tab icon (ticket shape with "z"; hardcoded gold — static files can't use CSS variables)
 ├── src/
-│   ├── App.tsx                # Router, auth guard, providers
+│   ├── App.tsx                # Router, auth guard, DashboardLayout (nested routes for split panel), providers
 │   ├── main.tsx               # React entry point
 │   ├── styles.css             # All application styles
 │   ├── components/
+│   │   ├── Layout.tsx         # Shared page wrapper: renders Topbar + scrollable content area
+│   │   ├── Topbar.tsx         # Persistent top navigation bar (logo, menu dropdown, user email)
 │   │   ├── TicketIcon.tsx     # Reusable SVG ticket icon (stroke="currentColor", responds to user's button color)
 │   │   └── GmailPickerModal.tsx  # Google OAuth + Gmail message search/select/import modal
 │   ├── hooks/
@@ -118,7 +137,7 @@ zTicket/
 │   │   └── supabase.ts        # Supabase client init
 │   └── pages/
 │       ├── LoginPage.tsx
-│       ├── DashboardPage.tsx
+│       ├── DashboardPage.tsx  # Accepts panelContent prop; manages split vs. full-width layout
 │       ├── TicketFormPage.tsx
 │       ├── TicketDetailPage.tsx
 │       ├── ClientsPage.tsx
@@ -129,7 +148,7 @@ zTicket/
 ├── vite.config.ts
 ├── tsconfig.json
 ├── package.json
-└── .env                       # Enviornment variables (not to be committed, just for local testing)
+└── .env                       # Environment variables (not to be committed, just for local testing)
 ```
 
 ---
