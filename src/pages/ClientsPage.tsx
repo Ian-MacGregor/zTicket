@@ -1,5 +1,19 @@
+/**
+ * ClientsPage.tsx
+ *
+ * Management page for clients and their contacts. Supports creating, renaming,
+ * and deleting clients, as well as adding, editing, and removing individual
+ * contacts within each client card.
+ *
+ * All mutations reload the full client list from the API so the UI always
+ * reflects server state. Inline edit forms are shown/hidden by tracking the
+ * ID of the item currently being edited in component state.
+ */
+
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+
+// ── Type definitions ──────────────────────────────────────────────────────────
 
 interface Contact {
   id?: string;
@@ -18,19 +32,23 @@ interface Client {
 }
 
 export default function ClientsPage() {
-const [clients, setClients] = useState<Client[]>([]);
+  // ── Client list state ────────────────────────────────────
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // IDs of the client/contact currently being edited inline (null = none).
   const [editingClient, setEditingClient] = useState<string | null>(null);
   const [editingContact, setEditingContact] = useState<string | null>(null);
 
-  // New client form
+  // ── New client form ──────────────────────────────────────
   const [newClientName, setNewClientName] = useState("");
   const [creatingClient, setCreatingClient] = useState(false);
 
-  // Edit client name
+  // ── Edit client name ─────────────────────────────────────
   const [editClientName, setEditClientName] = useState("");
 
-  // New contact form (per client)
+  // ── New contact form (per client) ────────────────────────
+  // addingContactTo holds the ID of the client whose "Add Contact" form is open.
   const [addingContactTo, setAddingContactTo] = useState<string | null>(null);
   const [contactForm, setContactForm] = useState<Contact>({
     name: "",
@@ -41,7 +59,7 @@ const [clients, setClients] = useState<Client[]>([]);
     distribute_code: false,
   });
 
-  // Edit contact form
+  // ── Edit contact form ────────────────────────────────────
   const [editContactForm, setEditContactForm] = useState<Contact>({
     name: "",
     email: "",
@@ -51,6 +69,7 @@ const [clients, setClients] = useState<Client[]>([]);
     distribute_code: false,
   });
 
+  /** Fetches / refreshes the full client list from the API. */
   const load = () => {
     setLoading(true);
     api
@@ -60,8 +79,10 @@ const [clients, setClients] = useState<Client[]>([]);
       .finally(() => setLoading(false));
   };
 
+  // Load clients on mount.
   useEffect(load, []);
 
+  /** Creates a new client with the entered name and refreshes the list. */
   const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newClientName.trim()) return;
@@ -77,6 +98,7 @@ const [clients, setClients] = useState<Client[]>([]);
     }
   };
 
+  /** Saves the edited client name and exits inline edit mode. */
   const handleUpdateClient = async (id: string) => {
     if (!editClientName.trim()) return;
     try {
@@ -88,12 +110,14 @@ const [clients, setClients] = useState<Client[]>([]);
     }
   };
 
+  /** Deletes a client and all its contacts after user confirmation. */
   const handleDeleteClient = async (id: string) => {
     if (!confirm("Delete this client and all its contacts?")) return;
     await api.deleteClient(id);
     load();
   };
 
+  /** Adds a new contact to the specified client and resets the contact form. */
   const handleAddContact = async (clientId: string) => {
     if (!contactForm.name.trim()) return;
     try {
@@ -106,6 +130,7 @@ const [clients, setClients] = useState<Client[]>([]);
     }
   };
 
+  /** Saves edits to an existing contact and exits inline edit mode. */
   const handleUpdateContact = async (clientId: string, contactId: string) => {
     try {
       await api.updateContact(clientId, contactId, editContactForm);
@@ -116,6 +141,7 @@ const [clients, setClients] = useState<Client[]>([]);
     }
   };
 
+  /** Deletes a contact from a client after user confirmation. */
   const handleDeleteContact = async (clientId: string, contactId: string) => {
     if (!confirm("Delete this contact?")) return;
     await api.deleteContact(clientId, contactId);

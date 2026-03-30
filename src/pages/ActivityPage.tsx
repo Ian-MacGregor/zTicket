@@ -1,9 +1,20 @@
+/**
+ * ActivityPage.tsx
+ *
+ * Full-page audit log showing every action recorded in the system (ticket
+ * created, status changed, comment added, etc.). Results are paginated
+ * server-side at PAGE_SIZE rows per page. Clicking a row navigates to the
+ * related ticket when one is available.
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../lib/api";
 
+/** Number of activity rows fetched per page. */
 const PAGE_SIZE = 50;
 
+/** Formats an ISO date string as locale date + time (HH:MM:SS). */
 function formatDateTime(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -11,12 +22,15 @@ function formatDateTime(dateStr: string): string {
 
 export default function ActivityPage() {
   const navigate = useNavigate();
+
+  // ── Pagination & data state ──────────────────────────────
   const [rows, setRows]       = useState<any[]>([]);
   const [total, setTotal]     = useState(0);
   const [page, setPage]       = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState<string | null>(null);
 
+  // Fetch a single page of activity records whenever the page number changes.
   useEffect(() => {
     setLoading(true);
     setError(null);

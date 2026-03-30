@@ -1,7 +1,29 @@
+/**
+ * DashboardPage.tsx
+ *
+ * Main ticket list view. Displays a scrollable, server-side filtered and
+ * paginated table of tickets alongside a global stats row, an activity ticker,
+ * and filter / search controls.
+ *
+ * This component is kept permanently mounted by DashboardLayout (see App.tsx)
+ * so that filter and pagination state survives navigating into and out of
+ * individual ticket panels. When a ticket is selected the panel slot receives
+ * the router outlet as `panelContent` and renders it as a side-panel overlay.
+ *
+ * Props:
+ *   panelContent  — React node to render in the slide-in panel (ticket detail /
+ *                   form). Null when no ticket route is active.
+ *   onClosePanel  — Callback that navigates back to "/" to dismiss the panel.
+ */
+
 import React, { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
+
+// ── Display mappings ──────────────────────────────────────────────────────────
+// These records map internal status/priority keys to CSS custom properties and
+// human-readable labels used throughout the ticket table.
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
@@ -28,12 +50,16 @@ const PRIORITY_LABELS: Record<string, string> = {
   low:      "◌ Low",
 };
 
+// ── Utility functions ─────────────────────────────────────────────────────────
+
+/** Formats an ISO date string as a locale date + time (HH:MM:SS). Returns "—" for null. */
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
   return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
+/** Returns a compact relative timestamp ("just now", "5m ago", "2h ago", "3d ago"). */
 function timeAgo(dateStr: string): string {
   const secs = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   if (secs < 60)  return "just now";
@@ -42,6 +68,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(secs / 86400)}d ago`;
 }
 
+/** Returns the most relevant "last activity" date for a ticket row's Dates column. */
 function getLastStatusDate(ticket: any): string | null {
   return ticket.status_updated_at || ticket.created_at;
 }
@@ -56,6 +83,8 @@ export default function DashboardPage({
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // compact = true when a ticket panel is open; drives the split-layout CSS class
   const compact = !!panelContent;
   // Highlight the currently selected ticket row in the sidebar
   const selectedId = location.pathname.match(/^\/tickets\/([^/]+?)(?:\/edit)?$/)?.[1] ?? null;
@@ -86,18 +115,23 @@ export default function DashboardPage({
   const [sortBy,         setSortBy]         = useState("ref-desc");
 
   // ── Modals ───────────────────────────────────────────────
+  // assignModal holds the ticketId + pending status while the user picks an assignee.
+  // waitHoldModal holds the ticketId while the user types a hold reason.
   const [assignModal,     setAssignModal]     = useState<{ ticketId: string; pendingStatus: string } | null>(null);
   const [assignModalUser, setAssignModalUser] = useState("");
   const [waitHoldModal,   setWaitHoldModal]   = useState<{ ticketId: string } | null>(null);
   const [waitHoldReason,  setWaitHoldReason]  = useState("");
 
   // ── Activity ticker ──────────────────────────────────────
+  // Used to measure whether the ticker content overflows its container so the
+  // CSS marquee animation can be conditionally enabled.
   const activityItemsWrapRef = useRef<HTMLDivElement>(null);
   const activityItemsRef = useRef<HTMLDivElement>(null);
   const [activityOverflows, setActivityOverflows] = useState(false);
   const [activityScrollDist, setActivityScrollDist] = useState(0);
 
   // ── Lock body scroll on mobile when the panel overlay is open ─
+  // Prevents the page behind the overlay from scrolling when a ticket is open.
   useEffect(() => {
     if (!compact) return;
     document.body.classList.add("panel-open");
@@ -108,8 +142,10 @@ export default function DashboardPage({
     };
   }, [compact]);
 
-  // ── Header height sync: keep panel-pane-header the same height
-  // as ticket-table-header by observing the table header's resize ─
+  // ── Header height sync ───────────────────────────────────
+  // Keeps the panel-pane-header the same pixel height as ticket-table-header
+  // so they appear visually aligned in the split layout. Uses ResizeObserver
+  // so the sync holds when the browser is resized or the filters wrap.
   const tableHeaderRef = useRef<HTMLDivElement>(null);
   const panelHeaderRef = useRef<HTMLDivElement>(null);
 
@@ -129,13 +165,18 @@ export default function DashboardPage({
     return () => ro.disconnect();
   }, [compact]);
 
-  // ── Refresh key — incremented by polling and status changes ─
+  // ── Refresh key ──────────────────────────────────────────
+  // Incrementing fetchKey re-runs the main ticket fetch without requiring any
+  // filter state to change. Used by the 30-second polling interval and by
+  // inline status changes so the list updates immediately after edits.
   const [fetchKey, setFetchKey] = useState(0);
   // When true, the next fetch triggered by fetchKey is a silent background
   // refresh — skip the skeleton loader so the UI doesn't flash.
   const isBackgroundRef = useRef(false);
 
-  // ── Debounce search (400 ms) — also resets page ──────────
+  // ── Search debounce (400 ms) ─────────────────────────────
+  // Delays the API call until the user has stopped typing, and resets to
+  // page 1 so results always start from the beginning of the new query.
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedSearch(search);
@@ -144,7 +185,10 @@ export default function DashboardPage({
     return () => clearTimeout(t);
   }, [search]);
 
-  // ── Main fetch: tickets (server-side filtered/sorted/paginated) ─
+  // ── Main ticket fetch ────────────────────────────────────
+  // Fires whenever any filter, sort, pagination, or fetchKey value changes.
+  // The "active" status shorthand is expanded to "assigned,review" for the API.
+  // Background refreshes skip the loading skeleton to avoid UI flicker.
   useEffect(() => {
     const background = isBackgroundRef.current;
     isBackgroundRef.current = false;
@@ -165,7 +209,10 @@ export default function DashboardPage({
       .finally(() => setLoading(false));
   }, [page, limit, sortBy, filterStatus, filterPriority, filterClient, filterView, debouncedSearch, searchType, fetchKey]);
 
-  // ── One-time setup: stats, clients, users, polling ───────
+  // ── One-time setup ───────────────────────────────────────
+  // Loads supporting data (stats, activity feed, client list, user list) on
+  // mount and sets up a 30-second polling interval for the live activity strip
+  // and stats row. The interval is cleared on unmount.
   useEffect(() => {
     api.getTicketStats().then(setStats).catch(console.error);
     api.listActivity().then(setActivity).catch(console.error);
@@ -182,6 +229,8 @@ export default function DashboardPage({
   }, []);
 
   // ── Activity overflow detection ──────────────────────────
+  // Measures whether the activity ticker items are wider than their container.
+  // When they overflow, the CSS animation scrolls them horizontally.
   useEffect(() => {
     const check = () => {
       const wrap = activityItemsWrapRef.current;
@@ -197,13 +246,16 @@ export default function DashboardPage({
     return () => ro.disconnect();
   }, [activity]);
 
-  // ── Reset page when any filter/sort changes ───────────────
-  // (search reset is handled in the debounce effect above)
+  // ── Filter helpers ───────────────────────────────────────
+  // Each setter also resets the page to 1 so the user always sees results
+  // from the start when a filter changes. Search reset is handled separately
+  // in the debounce effect above.
   const setStatusFilter = (v: string) => { setFilterStatus(v);   setPage(1); };
   const setPriorityFilter = (v: string) => { setFilterPriority(v); setPage(1); };
   const setClientFilter = (v: string) => { setFilterClient(v);   setPage(1); };
   const setViewFilter = (v: string) => { setFilterView(v);     setPage(1); };
 
+  /** Resets all filters and sort back to their default values. */
   const resetFilters = () => {
     setFilterStatus("all");
     setFilterPriority("all");
@@ -216,6 +268,8 @@ export default function DashboardPage({
   };
 
   // ── Sort helpers ─────────────────────────────────────────
+  // Clicking the same column header toggles direction; clicking a new column
+  // applies that column's default direction.
   const [sortCol, sortDir] = sortBy.split("-") as [string, "asc" | "desc"];
   const handleColSort = (col: string, defaultDir: "asc" | "desc" = "desc") => {
     setSortBy(sortCol === col ? `${col}-${sortDir === "asc" ? "desc" : "asc"}` : `${col}-${defaultDir}`);
@@ -224,7 +278,11 @@ export default function DashboardPage({
   const sortArrow = (col: string) =>
     sortCol === col ? (sortDir === "asc" ? " ↑" : " ↓") : null;
 
-  // ── Status change (dashboard dropdown) ───────────────────
+  // ── Inline status change ─────────────────────────────────
+  // Called by the status <select> in each ticket row. Sends the update to the
+  // API then silently refreshes the list and stats so the UI stays in sync.
+  // The "assigned" transition from "unassigned" opens the assign modal first;
+  // "wait_hold" opens the hold-reason modal first.
   const handleStatusChange = async (ticketId: string, newStatus: string, extra: Record<string, unknown> = {}) => {
     try {
       const body: Record<string, unknown> = { status: newStatus, ...extra };

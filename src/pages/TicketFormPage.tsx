@@ -1,3 +1,16 @@
+/**
+ * TicketFormPage.tsx
+ *
+ * Shared create / edit form for tickets. Operates in two modes:
+ *   - Create mode (no :id param): blank form, derives initial status from
+ *     whether an assignee is selected, and optionally posts an initial comment.
+ *   - Edit mode (:id present): pre-populates fields from the existing ticket
+ *     and exposes the status selector for manual changes.
+ *
+ * Renders inside the dashboard side-panel slot so the ticket list stays
+ * visible behind the form.
+ */
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../lib/api";
@@ -5,16 +18,23 @@ import { api } from "../lib/api";
 export default function TicketFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // isEdit drives which API method to call and which fields to show/hide.
   const isEdit = Boolean(id);
 
+  // ── Supporting data ──────────────────────────────────────
   const [users, setUsers] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+
+  // ── Async state ──────────────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Create mode only — posted as a first comment immediately after ticket creation.
   const [initialComment, setInitialComment] = useState("");
 
+  // ── Form fields ──────────────────────────────────────────
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -30,6 +50,9 @@ export default function TicketFormPage() {
     wait_hold_reason: "",
   });
 
+  // ── Data loading ─────────────────────────────────────────
+  // Always fetches users and clients for the dropdown selects.
+  // In edit mode, also fetches the existing ticket to pre-populate the form.
   useEffect(() => {
     api.listUsers().then(setUsers).catch(console.error);
     api.listClients().then(setClients).catch(console.error);
@@ -59,9 +82,22 @@ export default function TicketFormPage() {
     }
   }, [id, isEdit]);
 
+  /** Convenience updater that merges a single field change into the form state. */
   const set = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  /**
+   * Validates required field combinations, builds the API payload, then either
+   * creates or updates the ticket. On success navigates to the ticket detail page.
+   *
+   * Validation rules:
+   *   - "assigned" or "review" status in edit mode requires an assignee.
+   *   - "wait_hold" status requires a non-empty reason.
+   *
+   * Create mode automatically sets status to "assigned" if an assignee was
+   * selected, otherwise "unassigned". Quote fields are nulled out when
+   * quote_required is unchecked.
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -81,14 +117,17 @@ export default function TicketFormPage() {
 
     const payload = {
       ...form,
+      // In create mode, derive status from assignee presence rather than using the form default.
       status: !isEdit ? (form.assigned_to ? "assigned" : "unassigned") : form.status,
       assigned_to: form.assigned_to || null,
       reviewer: form.reviewer || null,
       client_id: form.client_id || null,
       quote_required: form.quote_required,
+      // Strip quote fields when the checkbox is unchecked.
       quoted_time: form.quote_required ? (form.quoted_time || null) : null,
       quoted_price: form.quote_required ? (form.quoted_price ? parseFloat(form.quoted_price) : null) : null,
       quoted_amf: form.quote_required ? (form.quoted_amf ? parseFloat(form.quoted_amf) : null) : null,
+      // Only persist wait_hold_reason when the status actually requires it.
       wait_hold_reason: form.status === "wait_hold" ? form.wait_hold_reason || null : null,
     };
 
@@ -98,6 +137,7 @@ export default function TicketFormPage() {
         navigate(`/tickets/${id}`);
       } else {
         const created = await api.createTicket(payload);
+        // Post the optional initial comment immediately after creation.
         if (initialComment.trim()) {
           await api.createComment(created.id, initialComment.trim());
         }

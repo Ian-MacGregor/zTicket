@@ -1,3 +1,24 @@
+/**
+ * App.tsx
+ *
+ * Root of the application. Sets up global context providers (auth, colors),
+ * the client-side router, and all top-level route definitions. Every protected
+ * route is wrapped in <ProtectedRoute> so unauthenticated users are redirected
+ * to /login automatically.
+ *
+ * Route structure:
+ *   /login              — LoginPage (redirects to / if already signed in)
+ *   /                   — DashboardPage (ticket list + side-panel slot)
+ *     tickets/new       — TicketFormPage rendered inside the side panel
+ *     tickets/:id       — TicketDetailPage rendered inside the side panel
+ *     tickets/:id/edit  — TicketFormPage (edit mode) inside the side panel
+ *   /clients            — ClientsPage
+ *   /colors             — ColorsPage
+ *   /settings           — SettingsPage
+ *   /activity           — ActivityPage
+ *   *                   — catch-all redirect to /
+ */
+
 import {
   BrowserRouter,
   Routes,
@@ -20,6 +41,11 @@ import ColorsPage from "./pages/ColorsPage";
 import SettingsPage from "./pages/SettingsPage";
 import ActivityPage from "./pages/ActivityPage";
 
+/**
+ * Wraps any route that requires a signed-in user.
+ * Shows a loading indicator while the auth state is being resolved,
+ * then redirects to /login if no user is present.
+ */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-state">Loading…</div>;
@@ -27,14 +53,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-// Always keeps DashboardPage mounted; passes outlet content in as a prop
-// so filter/pagination state is never reset when opening a ticket panel.
+/**
+ * Keeps DashboardPage permanently mounted so its filter/pagination state
+ * is preserved when the user opens or closes a ticket panel.
+ *
+ * The nested outlet (ticket detail / form) is passed as a prop rather than
+ * rendered as a child, which allows DashboardPage to decide where in its own
+ * layout to display it.
+ *
+ * Note: useOutlet() returns a truthy element even for the index route whose
+ * element is null, so panel visibility is derived from the URL path instead.
+ */
 function DashboardLayout() {
   const outlet = useOutlet();
   const navigate = useNavigate();
   const location = useLocation();
-  // useOutlet() returns a truthy React element even when the index route has
-  // element={null}, so derive panel visibility from the URL instead.
+  // Always keeps DashboardPage mounted; passes outlet content in as a prop
+  // so filter/pagination state is never reset when opening a ticket panel.
   const isTicketRoute = /^\/tickets\//.test(location.pathname);
 
   return (
@@ -45,6 +80,10 @@ function DashboardLayout() {
   );
 }
 
+/**
+ * Renders the full route tree once auth state has resolved.
+ * Separating this from <App> avoids an extra re-render cycle on load.
+ */
 function AppRoutes() {
   const { user, loading } = useAuth();
 
@@ -52,10 +91,12 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Public route — redirects authenticated users away from the login page */}
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
       />
+
       {/* Dashboard + ticket panel (nested routes share the dashboard layout) */}
       <Route
         path="/"
@@ -67,12 +108,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        {/* Index renders no panel content — dashboard shows the plain ticket list */}
         <Route index element={null} />
         <Route path="tickets/new" element={<TicketFormPage />} />
         <Route path="tickets/:id" element={<TicketDetailPage />} />
         <Route path="tickets/:id/edit" element={<TicketFormPage />} />
       </Route>
 
+      {/* Stand-alone pages — each rendered inside the shared chrome Layout */}
       <Route
         path="/clients"
         element={
@@ -105,11 +148,19 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      {/* Catch-all — any unknown path falls back to the dashboard */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
+/**
+ * Top-level component. Wraps the app in:
+ *   - AuthProvider   — supplies user session state to the whole tree
+ *   - ColorProvider  — applies the user's custom theme CSS variables
+ *   - BrowserRouter  — scopes all routes under the /zTicket basename
+ */
 export default function App() {
   return (
     <AuthProvider>

@@ -1,5 +1,26 @@
+/**
+ * ColorsPage.tsx
+ *
+ * Theme customisation page. Allows users to change the color values that are
+ * applied as CSS custom properties across the whole app (status colors,
+ * priority colors, background/foreground tones, etc.).
+ *
+ * Each color can be edited via:
+ *   - A native <input type="color"> color picker
+ *   - A hex text input (#RRGGBB or #RRGGBBAA)
+ *   - An ARGB text input (FFRRGGBB format used by some external tools)
+ *
+ * Changes are kept in a local `draft` state until the user clicks "Save
+ * Colors". A live preview card at the bottom of the page shows how the draft
+ * colors look on representative ticket rows before saving.
+ */
+
 import { useState, useEffect } from "react";
 import { useColors, DEFAULT_COLORS, ColorSettings } from "../hooks/useColors";
+
+// ── Section configuration ─────────────────────────────────────────────────────
+// Defines the grouping and labels for every editable color field. Adding a new
+// color only requires extending SECTIONS — the rendering loop handles the rest.
 
 interface ColorFieldDef {
   key: keyof ColorSettings;
@@ -38,7 +59,9 @@ const SECTIONS: { title: string; fields: ColorFieldDef[] }[] = [
   },
 ];
 
-// Convert hex to 8-char ARGB string
+// ── Color format utilities ────────────────────────────────────────────────────
+
+/** Converts a #RRGGBB or #RRGGBBAA hex string to an 8-char ARGB string (FFRRGGBB). */
 function hexToArgb(hex: string): string {
   const clean = hex.replace("#", "");
   if (clean.length === 6) return "FF" + clean.toUpperCase();
@@ -46,7 +69,7 @@ function hexToArgb(hex: string): string {
   return "FF000000";
 }
 
-// Convert ARGB string to #hex (drop alpha for display, keep for storage)
+/** Converts an ARGB string (FFRRGGBB) to a #RRGGBB hex string for the color picker. */
 function argbToHex(argb: string): string {
   const clean = argb.replace("#", "").toUpperCase();
   if (clean.length === 8) return "#" + clean.slice(2);
@@ -54,25 +77,31 @@ function argbToHex(argb: string): string {
   return "#000000";
 }
 
+/** Returns true if `val` is a valid 6- or 8-character hex color (with or without #). */
 function isValidHex(val: string): boolean {
   return /^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(val);
 }
 
 export default function ColorsPage() {
-const { colors, saveColors, loading } = useColors();
+  const { colors, saveColors, loading } = useColors();
+
+  // draft holds unsaved edits; synced from `colors` whenever the server value changes.
   const [draft, setDraft] = useState<ColorSettings>(colors);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Keep draft in sync if the saved colors are loaded or change externally.
   useEffect(() => {
     setDraft(colors);
   }, [colors]);
 
+  /** Updates a single color field in the draft and clears the "Saved!" indicator. */
   const setField = (key: keyof ColorSettings, value: string) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
   };
 
+  /** Persists the current draft to the server via the colors hook. */
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -85,6 +114,7 @@ const { colors, saveColors, loading } = useColors();
     }
   };
 
+  /** Resets all colors to the application defaults and saves them immediately. */
   const handleReset = async () => {
     if (!confirm("Reset all colors to defaults?")) return;
     setDraft(DEFAULT_COLORS);

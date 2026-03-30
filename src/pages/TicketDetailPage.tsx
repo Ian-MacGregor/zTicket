@@ -1,13 +1,28 @@
+/**
+ * TicketDetailPage.tsx
+ *
+ * Read-only detail view for a single ticket, rendered inside the dashboard
+ * side-panel slot (or as a full page on small screens). Displays the ticket's
+ * metadata, status selector, comments thread, linked emails, and file
+ * attachments — all editable inline.
+ *
+ * Status transitions that require extra input ("assigned" from "unassigned",
+ * and "wait_hold") open confirmation modals before the API call is made.
+ */
+
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import GmailPickerModal from "../components/GmailPickerModal";
 
+/** Formats an ISO date string as locale date + time (HH:MM:SS). Returns "—" for null. */
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "—";
   const d = new Date(dateStr);
   return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
+
+// ── Display mappings ──────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
   unassigned: "var(--status-unassigned)",
@@ -29,44 +44,57 @@ const STATUS_LABELS: Record<string, string> = {
 export default function TicketDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // ── Ticket state ─────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [ticket, setTicket] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<any>(null);
+
+  // ── File upload / download state ─────────────────────────
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [downloading, setDownloading] = useState(false);
+
+  // ── Status change modals ─────────────────────────────────
+  // assignModal holds the pending status while the user selects an assignee.
+  // waitHoldModal is a simple boolean flag; the reason text is in waitHoldReason.
   const [assignModal, setAssignModal] = useState<{ pendingStatus: string } | null>(null);
   const [assignModalUser, setAssignModalUser] = useState("");
   const [waitHoldModal, setWaitHoldModal] = useState(false);
   const [waitHoldReason, setWaitHoldReason] = useState("");
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  // Emails
+  // ── Emails ───────────────────────────────────────────────
   const [emails, setEmails]             = useState<any[]>([]);
   const [gmailPickerOpen, setGmailPickerOpen] = useState(false);
+  // Only one email body is expanded at a time; tracked by email id.
   const [expandedEmailId, setExpandedEmailId] = useState<string | null>(null);
 
+  /** Fetches the list of emails linked to this ticket. */
   const loadEmails = () => {
     if (!id) return;
     api.listTicketEmails(id).then(setEmails).catch(console.error);
   };
 
-  // Comments
+  // ── Comments ─────────────────────────────────────────────
   const [comments, setComments] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [newComment, setNewComment] = useState("");
+  // editingId tracks which comment (if any) is currently in edit mode.
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
 
+  /** Fetches the comment thread for this ticket. */
   const loadComments = () => {
     if (!id) return;
     api.listComments(id).then(setComments).catch(console.error);
   };
 
+  /** Fetches/refreshes the full ticket record. */
   const load = () => {
     if (!id) return;
     setLoading(true);
@@ -77,6 +105,8 @@ export default function TicketDetailPage() {
       .finally(() => setLoading(false));
   };
 
+  // ── Initial data load ────────────────────────────────────
+  // Runs whenever the ticket ID changes (e.g., navigating between tickets).
   useEffect(() => {
     load();
     loadComments();
@@ -85,6 +115,7 @@ export default function TicketDetailPage() {
     api.getMe().then((m) => { setMe(m); setCurrentUserId(m.id); }).catch(console.error);
   }, [id]);
 
+  /** Posts a new comment and refreshes the comment list on success. */
   const handleAddComment = async () => {
     if (!id || !newComment.trim()) return;
     setCommentSaving(true);
@@ -100,6 +131,7 @@ export default function TicketDetailPage() {
     }
   };
 
+  /** Saves edits to an existing comment and exits edit mode on success. */
   const handleSaveEdit = async (commentId: string) => {
     if (!id || !editingBody.trim()) return;
     setCommentSaving(true);
@@ -115,6 +147,11 @@ export default function TicketDetailPage() {
     }
   };
 
+  /**
+   * Updates the ticket's status and merges the API response back into local
+   * state so the UI reflects the change without a full reload. The "assigned"
+   * and "wait_hold" transitions pass additional fields via `extra`.
+   */
   const handleStatusChange = async (newStatus: string, extra: Record<string, unknown> = {}) => {
     if (!id) return;
     setStatusError(null);
@@ -129,6 +166,7 @@ export default function TicketDetailPage() {
     }
   };
 
+  /** Uploads one or more files to the ticket and reloads the ticket on success. */
   const uploadFiles = async (files: FileList) => {
     if (!files.length || !id) return;
     setUploading(true);
@@ -143,10 +181,12 @@ export default function TicketDetailPage() {
     }
   };
 
+  /** Triggers the file upload flow when the user selects files via the input. */
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) uploadFiles(e.target.files);
   };
 
+  /** Requests a server-generated ZIP archive of all ticket files. */
   const handleDownloadAll = async () => {
     if (!id) return;
     setDownloading(true);
@@ -159,12 +199,14 @@ export default function TicketDetailPage() {
     }
   };
 
+  /** Deletes a single file attachment after user confirmation. */
   const handleDeleteFile = async (fileId: string) => {
     if (!id || !confirm("Delete this file?")) return;
     await api.deleteFile(id, fileId);
     load();
   };
 
+  /** Permanently deletes the ticket and navigates back to the dashboard. */
   const handleDelete = async () => {
     if (!id || !confirm("Permanently delete this ticket?")) return;
     await api.deleteTicket(id);
