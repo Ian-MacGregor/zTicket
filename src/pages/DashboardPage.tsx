@@ -227,12 +227,22 @@ export default function DashboardPage({
     }, 30000);
 
     // When the detail panel saves a change it fires "ticket-updated" so we can
-    // merge the authoritative server data into the list row immediately.
+    // merge the authoritative server data into the list row and stat cards immediately.
     const onTicketUpdated = (e: Event) => {
       const updated = (e as CustomEvent).detail;
-      if (updated?.id) {
-        setTickets(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
-      }
+      if (!updated?.id) return;
+      setTickets(prev => {
+        const old = prev.find(t => t.id === updated.id);
+        if (old && old.status !== updated.status) {
+          type StatKey = keyof typeof stats;
+          setStats(s => ({
+            ...s,
+            ...(old.status in s ? { [old.status as StatKey]: Math.max(0, s[old.status as StatKey] - 1) } : {}),
+            ...(updated.status in s ? { [updated.status as StatKey]: s[updated.status as StatKey] + 1 } : {}),
+          }));
+        }
+        return prev.map(t => t.id === updated.id ? { ...t, ...updated } : t);
+      });
     };
     window.addEventListener("ticket-updated", onTicketUpdated);
 
@@ -302,9 +312,12 @@ export default function DashboardPage({
     if (newStatus === "unassigned") body.assigned_to = null;
     if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
 
-    // Optimistic update — reflect the change immediately so the row responds
-    // without waiting for the round trip. Snapshot tickets for rollback.
-    const snapshot = tickets;
+    // Optimistic update — reflect the change immediately so the row and stat
+    // cards respond without waiting for the round trip. Snapshot for rollback.
+    const oldStatus = tickets.find(t => t.id === ticketId)?.status as string | undefined;
+    const snapshotTickets = tickets;
+    const snapshotStats   = stats;
+
     setTickets(prev =>
       prev.map(t => {
         if (t.id !== ticketId) return t;
@@ -321,6 +334,16 @@ export default function DashboardPage({
       })
     );
 
+    // Adjust stat card counts: decrement the old bucket, increment the new one.
+    if (oldStatus && oldStatus !== newStatus) {
+      type StatKey = keyof typeof stats;
+      setStats(prev => ({
+        ...prev,
+        ...(oldStatus in prev ? { [oldStatus as StatKey]: Math.max(0, prev[oldStatus as StatKey] - 1) } : {}),
+        ...(newStatus  in prev ? { [newStatus  as StatKey]: prev[newStatus  as StatKey] + 1 } : {}),
+      }));
+    }
+
     try {
       const updated = await api.updateTicket(ticketId, body);
       // Merge authoritative server response to correct any optimistic assumptions
@@ -332,7 +355,8 @@ export default function DashboardPage({
       api.listActivity().then(setActivity).catch(console.error);
     } catch (err) {
       console.error(err);
-      setTickets(snapshot); // revert on failure
+      setTickets(snapshotTickets); // revert on failure
+      setStats(snapshotStats);
     }
   };
 
