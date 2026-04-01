@@ -100,7 +100,12 @@ export default function TicketDetailPage() {
     setLoading(true);
     api
       .getTicket(id)
-      .then(setTicket)
+      .then((t) => {
+        setTicket(t);
+        // Notify the dashboard list so it can update the row immediately
+        // (covers the case where we arrived here via the full-edit form).
+        window.dispatchEvent(new CustomEvent("ticket-updated", { detail: t }));
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   };
@@ -155,13 +160,34 @@ export default function TicketDetailPage() {
   const handleStatusChange = async (newStatus: string, extra: Record<string, unknown> = {}) => {
     if (!id) return;
     setStatusError(null);
+    const body: Record<string, unknown> = { status: newStatus, ...extra };
+    if (newStatus === "unassigned") body.assigned_to = null;
+    if (newStatus !== "wait_hold") body.wait_hold_reason = null;
+
+    // Optimistic update — apply the change immediately before the round trip.
+    const snapshot = ticket;
+    setTicket((prev: any) => {
+      if (!prev) return prev;
+      const patch: Record<string, unknown> = { status: newStatus };
+      if (newStatus === "unassigned") { patch.assigned_to = null; patch.assignee = null; }
+      if (newStatus !== "wait_hold") patch.wait_hold_reason = null;
+      if (extra.wait_hold_reason !== undefined) patch.wait_hold_reason = extra.wait_hold_reason;
+      if (extra.assigned_to) {
+        patch.assigned_to = extra.assigned_to;
+        const resolved = users.find((u: any) => u.id === extra.assigned_to);
+        if (resolved) patch.assignee = resolved;
+      }
+      return { ...prev, ...patch };
+    });
+
     try {
-      const body: Record<string, unknown> = { status: newStatus, ...extra };
-      if (newStatus === "unassigned") body.assigned_to = null;
-      if (newStatus !== "wait_hold") body.wait_hold_reason = null;
       const updated = await api.updateTicket(id, body);
       setTicket((prev: any) => ({ ...prev, ...updated }));
+      // Notify the dashboard list (rendered alongside this panel) so it can
+      // update the matching row without waiting for its polling interval.
+      window.dispatchEvent(new CustomEvent("ticket-updated", { detail: updated }));
     } catch (err: any) {
+      setTicket(snapshot); // revert on failure
       setStatusError(err.message || "Failed to update status.");
     }
   };

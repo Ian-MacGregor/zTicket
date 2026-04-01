@@ -225,7 +225,21 @@ export default function DashboardPage({
       api.getTicketStats().then(setStats).catch(console.error);
       api.listActivity().then(setActivity).catch(console.error);
     }, 30000);
-    return () => clearInterval(interval);
+
+    // When the detail panel saves a change it fires "ticket-updated" so we can
+    // merge the authoritative server data into the list row immediately.
+    const onTicketUpdated = (e: Event) => {
+      const updated = (e as CustomEvent).detail;
+      if (updated?.id) {
+        setTickets(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
+      }
+    };
+    window.addEventListener("ticket-updated", onTicketUpdated);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("ticket-updated", onTicketUpdated);
+    };
   }, []);
 
   // ── Activity overflow detection ──────────────────────────
@@ -284,18 +298,41 @@ export default function DashboardPage({
   // The "assigned" transition from "unassigned" opens the assign modal first;
   // "wait_hold" opens the hold-reason modal first.
   const handleStatusChange = async (ticketId: string, newStatus: string, extra: Record<string, unknown> = {}) => {
+    const body: Record<string, unknown> = { status: newStatus, ...extra };
+    if (newStatus === "unassigned") body.assigned_to = null;
+    if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
+
+    // Optimistic update — reflect the change immediately so the row responds
+    // without waiting for the round trip. Snapshot tickets for rollback.
+    const snapshot = tickets;
+    setTickets(prev =>
+      prev.map(t => {
+        if (t.id !== ticketId) return t;
+        const patch: Record<string, unknown> = { status: newStatus };
+        if (newStatus === "unassigned") { patch.assigned_to = null; patch.assignee = null; }
+        if (newStatus !== "wait_hold") patch.wait_hold_reason = null;
+        if (extra.wait_hold_reason !== undefined) patch.wait_hold_reason = extra.wait_hold_reason;
+        if (extra.assigned_to) {
+          patch.assigned_to = extra.assigned_to;
+          const resolved = users.find(u => u.id === extra.assigned_to);
+          if (resolved) patch.assignee = resolved;
+        }
+        return { ...t, ...patch };
+      })
+    );
+
     try {
-      const body: Record<string, unknown> = { status: newStatus, ...extra };
-      if (newStatus === "unassigned") body.assigned_to = null;
-      if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
-      await api.updateTicket(ticketId, body);
-      // Refetch current page and global stats (silently — no skeleton flash)
+      const updated = await api.updateTicket(ticketId, body);
+      // Merge authoritative server response to correct any optimistic assumptions
+      setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updated } : t));
+      // Silent background refresh for stats and full list sync
       isBackgroundRef.current = true;
       setFetchKey((k) => k + 1);
       api.getTicketStats().then(setStats).catch(console.error);
       api.listActivity().then(setActivity).catch(console.error);
     } catch (err) {
       console.error(err);
+      setTickets(snapshot); // revert on failure
     }
   };
 
