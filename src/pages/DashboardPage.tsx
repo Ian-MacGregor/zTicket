@@ -227,9 +227,10 @@ export default function DashboardPage({
     }, 30000);
 
     // When the detail panel saves a change it fires "ticket-updated" so we can
-    // merge the authoritative server data into the list row and stat cards immediately.
+    // merge the authoritative server data into the list row, stat cards, and
+    // activity ticker immediately.
     const onTicketUpdated = (e: Event) => {
-      const updated = (e as CustomEvent).detail;
+      const { _action, _actor, ...updated } = (e as CustomEvent<any>).detail ?? {};
       if (!updated?.id) return;
       setTickets(prev => {
         const old = prev.find(t => t.id === updated.id);
@@ -240,6 +241,16 @@ export default function DashboardPage({
             ...(old.status in s ? { [old.status as StatKey]: Math.max(0, s[old.status as StatKey] - 1) } : {}),
             ...(updated.status in s ? { [updated.status as StatKey]: s[updated.status as StatKey] + 1 } : {}),
           }));
+        }
+        if (_action) {
+          setActivity(prev => [{
+            id: `optimistic-${Date.now()}`,
+            ticket_id: updated.id,
+            action: _action,
+            created_at: new Date().toISOString(),
+            ticket: { ref_number: updated.ref_number, status: updated.status, assigned_to: updated.assigned_to, reviewer: updated.reviewer },
+            actor: _actor ?? { full_name: null, email: null },
+          }, ...prev]);
         }
         return prev.map(t => t.id === updated.id ? { ...t, ...updated } : t);
       });
@@ -312,11 +323,13 @@ export default function DashboardPage({
     if (newStatus === "unassigned") body.assigned_to = null;
     if (newStatus !== "wait_hold")  body.wait_hold_reason = null;
 
-    // Optimistic update — reflect the change immediately so the row and stat
-    // cards respond without waiting for the round trip. Snapshot for rollback.
-    const oldStatus = tickets.find(t => t.id === ticketId)?.status as string | undefined;
+    // Optimistic update — reflect the change immediately so the row, stat
+    // cards, and activity ticker respond without waiting for the round trip.
+    const changedTicket   = tickets.find(t => t.id === ticketId);
+    const oldStatus       = changedTicket?.status as string | undefined;
     const snapshotTickets = tickets;
     const snapshotStats   = stats;
+    const snapshotActivity = activity;
 
     setTickets(prev =>
       prev.map(t => {
@@ -333,6 +346,21 @@ export default function DashboardPage({
         return { ...t, ...patch };
       })
     );
+
+    // Prepend an optimistic activity entry so the ticker updates immediately.
+    setActivity(prev => [{
+      id: `optimistic-${Date.now()}`,
+      ticket_id: ticketId,
+      action: `set status to "${STATUS_LABELS[newStatus] ?? newStatus}"`,
+      created_at: new Date().toISOString(),
+      ticket: changedTicket ? {
+        ref_number: changedTicket.ref_number,
+        status: newStatus,
+        assigned_to: newStatus === "unassigned" ? null : (extra.assigned_to as string ?? changedTicket.assigned_to),
+        reviewer: changedTicket.reviewer,
+      } : null,
+      actor: { full_name: user?.user_metadata?.full_name ?? null, email: user?.email ?? null },
+    }, ...prev]);
 
     // Adjust stat card counts: decrement the old bucket, increment the new one.
     if (oldStatus && oldStatus !== newStatus) {
@@ -355,8 +383,9 @@ export default function DashboardPage({
       api.listActivity().then(setActivity).catch(console.error);
     } catch (err) {
       console.error(err);
-      setTickets(snapshotTickets); // revert on failure
+      setTickets(snapshotTickets);   // revert on failure
       setStats(snapshotStats);
+      setActivity(snapshotActivity);
     }
   };
 

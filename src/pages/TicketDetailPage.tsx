@@ -184,8 +184,15 @@ export default function TicketDetailPage() {
       const updated = await api.updateTicket(id, body);
       setTicket((prev: any) => ({ ...prev, ...updated }));
       // Notify the dashboard list (rendered alongside this panel) so it can
-      // update the matching row without waiting for its polling interval.
-      window.dispatchEvent(new CustomEvent("ticket-updated", { detail: updated }));
+      // update the matching row and activity ticker without waiting for polling.
+      const action = `set status to "${STATUS_LABELS[newStatus] ?? newStatus}"`;
+      window.dispatchEvent(new CustomEvent("ticket-updated", {
+        detail: {
+          ...updated,
+          _action: action,
+          _actor: { full_name: me?.full_name ?? null, email: me?.email ?? null },
+        },
+      }));
     } catch (err: any) {
       setTicket(snapshot); // revert on failure
       setStatusError(err.message || "Failed to update status.");
